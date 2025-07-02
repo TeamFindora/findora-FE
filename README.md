@@ -1,69 +1,130 @@
-# React + TypeScript + Vite
+# Findora FE
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Findora 프론트엔드 프로젝트입니다.
 
-Currently, two official plugins are available:
+## 🚀 기술 스택
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React 19** - UI 라이브러리
+- **TypeScript** - 타입 안정성
+- **Vite** - 빌드 도구 및 개발 서버
+- **TailwindCSS** - 유틸리티 우선 CSS 프레임워크
+- **React Router** - 클라이언트 사이드 라우팅
 
-## Expanding the ESLint configuration
+## 📁 프로젝트 구조
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+├── components/          # 재사용 가능한 컴포넌트
+│   ├── Header/         # 헤더 컴포넌트
+│   ├── Nav/            # 네비게이션 바
+│   ├── Footer/         # 푸터 컴포넌트
+│   └── index.ts        # 컴포넌트 통합 export
+├── pages/              # 페이지 컴포넌트
+│   ├── Home/           # 홈페이지
+│   ├── Login/          # 로그인 페이지
+│   ├── SignUp/         # 회원가입 페이지
+│   └── index.ts        # 페이지 통합 export
+├── App.tsx             # 메인 앱 컴포넌트 (라우터 설정)
+├── main.tsx            # 앱 진입점
+├── index.css           # 글로벌 스타일
+└── App.css             # 앱 레이아웃 스타일
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🎯 주요 기능
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### 페이지
+- **홈페이지** (`/`) - 메인 랜딩 페이지
+- **로그인** (`/login`) - 사용자 로그인
+- **회원가입** (`/signup`) - 신규 사용자 가입
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 네비게이션
+- 홈
+- 연구실/교수평가
+- 커뮤니티  
+- 입시관
+- 로그인
+- 회원가입
+
+### 컴포넌트
+- **Header** - 브랜드 로고와 네비게이션
+- **Nav** - 독립적인 네비게이션 바
+- **Footer** - 사이트 정보 및 링크
+
+## 🎨 디자인 특징
+
+- **반응형 디자인** - 웹/모바일 호환
+- **다크 테마** - 어두운 배경 기반 UI
+- **현대적 스타일** - 블러 효과, 부드러운 애니메이션
+- **접근성** - 키보드 네비게이션 지원
+
+## 🛠️ 설치 및 실행
+
+### 필수 요구사항
+- Node.js 18+ 
+- npm 또는 yarn
+
+### 설치
+```bash
+# 저장소 클론
+git clone https://github.com/[username]/findora-FE.git
+cd findora-FE
+
+# 의존성 설치
+npm install
 ```
+
+### 개발 서버 실행
+```bash
+npm run dev
+```
+개발 서버가 `http://localhost:5173`에서 실행됩니다.
+
+### 빌드
+```bash
+npm run build
+```
+
+### 프리뷰 (빌드된 앱 미리보기)
+```bash
+npm run preview
+```
+
+## 🌐 라우터 구성
+
+| 경로 | 컴포넌트 | 설명 | 레이아웃 |
+|------|----------|------|----------|
+| `/` | Home | 홈페이지 | Header + Footer |
+| `/login` | Login | 로그인 | 전체 화면 |
+| `/signup` | SignUp | 회원가입 | 전체 화면 |
+| `/research` | - | 연구실/교수평가 | 미구현 |
+| `/community` | - | 커뮤니티 | 미구현 |
+| `/admission` | - | 입시관 | 미구현 |
+
+## 👥 팀 작업
+
+### 브랜치 전략
+- `main` - 배포용 메인 브랜치
+- `[이름]` - 개인 작업 브랜치 (예: `의준`, `김철수`)
+
+### 페이지별 담당
+각 팀원은 개별 페이지를 담당하여 충돌 없이 개발 가능
+
+## 📋 개발 예정
+
+- [ ] 연구실/교수평가 페이지
+- [ ] 커뮤니티 페이지  
+- [ ] 입시관 페이지
+- [ ] 사용자 인증 시스템
+- [ ] API 연동
+- [ ] 상태 관리 (Redux/Zustand)
+
+## 🤝 기여 방법
+
+1. 개인 브랜치 생성
+2. 기능 개발
+3. Pull Request 생성
+4. 코드 리뷰 후 병합
+
+---
+
+**Findora FE Team** 🚀
