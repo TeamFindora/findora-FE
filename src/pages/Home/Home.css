@@ -1,0 +1,77 @@
+.home-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+}
+
+.home-content h1 {
+  font-size: 3rem;
+  color: #646cff;
+  margin-bottom: 1rem;
+  font-weight: bold;
+}
+
+.home-content p {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 2rem;
+}
+
+.home-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.btn {
+  padding: 0.75rem 2rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.btn-primary {
+  background: #646cff;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #535bf2;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: #646cff;
+  border-color: #646cff;
+}
+
+.btn-secondary:hover {
+  background: #646cff;
+  color: white;
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .home-content h1 {
+    font-size: 2rem;
+  }
+  
+  .home-content p {
+    font-size: 1rem;
+  }
+  
+  .home-buttons {
+    flex-direction: column;
+  }
+  
+  .btn {
+    width: 100%;
+    max-width: 200px;
+  }
+} 
