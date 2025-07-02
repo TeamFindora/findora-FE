@@ -1,0 +1,90 @@
+/* 루트 컨테이너 */
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+/* 헤더 */
+.header {
+  padding: 1rem 2rem;
+  text-align: left;
+  border-bottom: 1px solid #333;
+}
+
+.findora-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #646cff;
+  margin: 0;
+}
+
+/* 메인 컨텐츠 */
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 푸터 */
+.footer {
+  padding: 1rem 2rem;
+  text-align: center;
+  border-top: 1px solid #333;
+  margin-top: auto;
+}
+
+.footer p {
+  color: #888;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* 모바일 반응형 스타일 */
+@media (max-width: 768px) {
+  .header {
+    padding: 1rem;
+    text-align: center;
+  }
+  
+  .findora-title {
+    font-size: 1.5rem;
+  }
+  
+  .main-content {
+    padding: 1rem;
+  }
+  
+  .footer {
+    padding: 1rem;
+  }
+  
+  .footer p {
+    font-size: 0.8rem;
+  }
+}
+
+/* 태블릿 반응형 스타일 */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .header {
+    padding: 1.5rem;
+  }
+  
+  .findora-title {
+    font-size: 1.8rem;
+  }
+  
+  .main-content {
+    padding: 1.5rem;
+  }
+  
+  .footer {
+    padding: 1.5rem;
+  }
+}
