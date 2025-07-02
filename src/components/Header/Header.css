@@ -1,7 +1,7 @@
 .header {
   padding: 1rem 2rem;
-  border-bottom: 1px solid #333;
-  background: rgba(36, 36, 36, 0.95);
+  border-bottom: 1px solid black;
+  background: rgba(0, 0, 0, 0.95);
   backdrop-filter: blur(10px);
   position: sticky;
   top: 0;
@@ -12,14 +12,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 1200px;
   margin: 0 auto;
 }
 
 .findora-title {
   font-size: 2rem;
   font-weight: bold;
-  color: #646cff;
   margin: 0;
   text-decoration: none;
   transition: color 0.3s ease;
