@@ -1,31 +1,148 @@
 .home-container {
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 60vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
   text-align: center;
+  padding: 2rem;
+}
+
+.home-content {
+  max-width: 800px;
+  width: 100%;
 }
 
 .home-content h1 {
   font-size: 3rem;
-  color: #646cff;
   margin-bottom: 1rem;
-  font-weight: bold;
+  font-weight: 700;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.home-content p {
+.home-content > p {
   font-size: 1.2rem;
-  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 3rem;
+  opacity: 0.9;
+}
+
+.user-section, .guest-section {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 2rem;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  margin-top: 2rem;
+}
+
+.welcome-message {
   margin-bottom: 2rem;
 }
 
-/* 모바일 반응형 */
+.welcome-message h2 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.welcome-message p {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  margin: 0;
+}
+
+.user-actions, .guest-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.action-button {
+  display: inline-block;
+  padding: 0.75rem 2rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  min-width: 140px;
+}
+
+.action-button.primary {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.action-button.primary:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.action-button.secondary {
+  background: transparent;
+  color: white;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.action-button.secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* 태블릿 반응형 */
 @media (max-width: 768px) {
+  .home-container {
+    padding: 1rem;
+  }
+  
+  .home-content h1 {
+    font-size: 2.5rem;
+  }
+  
+  .welcome-message h2 {
+    font-size: 1.5rem;
+  }
+  
+  .user-section, .guest-section {
+    padding: 1.5rem;
+  }
+  
+  .user-actions, .guest-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .action-button {
+    width: 100%;
+    max-width: 200px;
+  }
+}
+
+/* 모바일 반응형 */
+@media (max-width: 480px) {
   .home-content h1 {
     font-size: 2rem;
   }
   
-  .home-content p {
+  .home-content > p {
     font-size: 1rem;
+  }
+  
+  .welcome-message h2 {
+    font-size: 1.3rem;
+  }
+  
+  .welcome-message p {
+    font-size: 1rem;
+  }
+  
+  .user-section, .guest-section {
+    padding: 1rem;
   }
 } 

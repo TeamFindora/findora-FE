@@ -4,23 +4,50 @@
   align-items: center;
   justify-content: center;
   padding: 2rem;
+  background: rgba(36, 36, 36, 0.95);
 }
 
 .login-form {
-  background: rgba(255, 255, 255, 0.1);
+  background: white;
   padding: 2rem;
   border-radius: 12px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
   width: 100%;
   max-width: 400px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  position: relative;
 }
 
-.login-form h2 {
-  text-align: center;
+.login-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 2rem;
-  color: #646cff;
-  font-size: 2rem;
+}
+
+.login-header h2 {
+  color: #333;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #999;
+  cursor: pointer;
+  padding: 0.25rem;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s ease;
+}
+
+.close-button:hover {
+  color: #333;
 }
 
 .form-group {
@@ -30,67 +57,119 @@
 .form-group label {
   display: block;
   margin-bottom: 0.5rem;
-  color: rgba(255, 255, 255, 0.87);
-  font-weight: 500;
+  color: #000;
+  font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .form-group input {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.87);
-  font-size: 1rem;
-  transition: border-color 0.3s ease;
+  border: 2px solid #999;
+  border-radius: 6px;
+  background: #f8f9fa;
+  color: #000;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
 }
 
 .form-group input:focus {
   outline: none;
   border-color: #646cff;
-  box-shadow: 0 0 0 2px rgba(100, 108, 255, 0.2);
+  background: white;
+  box-shadow: 0 0 0 2px rgba(100, 108, 255, 0.1);
 }
 
 .form-group input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: #666;
+  font-weight: normal;
 }
 
 .login-button {
   width: 100%;
   padding: 0.75rem;
-  background: #646cff;
+  background: #333;
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-bottom: 1rem;
+}
+
+.login-button:hover {
+  background: #555;
+}
+
+.divider {
+  text-align: center;
+  margin: 1.5rem 0;
+  position: relative;
+}
+
+.divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #ddd;
+}
+
+.divider span {
+  background: white;
+  color: #777;
+  padding: 0 1rem;
+  font-size: 0.8rem;
+}
+
+.kakao-login-button {
+  width: 100%;
+  padding: 0.75rem;
+  background: #FEE500;
+  color: #3c1e1e;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.3s ease;
   margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
-.login-button:hover {
-  background: #535bf2;
+.kakao-login-button:hover {
+  background: #fdd835;
+}
+
+.kakao-icon {
+  font-size: 1.1rem;
 }
 
 .login-links {
-  text-align: center;
-  color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .login-links a {
-  color: #646cff;
+  color: #555;
   text-decoration: none;
-  margin: 0 0.5rem;
+  font-size: 0.85rem;
+  transition: color 0.3s ease;
+  font-weight: 500;
 }
 
 .login-links a:hover {
-  color: #535bf2;
+  color: #646cff;
   text-decoration: underline;
-}
-
-.login-links span {
-  margin: 0 0.5rem;
 }
 
 /* 모바일 반응형 */
@@ -103,7 +182,12 @@
     padding: 1.5rem;
   }
   
-  .login-form h2 {
-    font-size: 1.5rem;
+  .login-header h2 {
+    font-size: 1.3rem;
+  }
+  
+  .login-links {
+    flex-direction: column;
+    gap: 0.5rem;
   }
 } 

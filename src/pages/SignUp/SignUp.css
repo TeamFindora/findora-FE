@@ -4,23 +4,50 @@
   align-items: center;
   justify-content: center;
   padding: 2rem;
+  background: rgba(36, 36, 36, 0.95);
 }
 
 .signup-form {
-  background: rgba(255, 255, 255, 0.1);
+  background: white;
   padding: 2rem;
   border-radius: 12px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
   width: 100%;
   max-width: 400px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  position: relative;
 }
 
-.signup-form h2 {
-  text-align: center;
+.signup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 2rem;
-  color: #646cff;
-  font-size: 2rem;
+}
+
+.signup-header h2 {
+  color: #333;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #999;
+  cursor: pointer;
+  padding: 0.25rem;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s ease;
+}
+
+.close-button:hover {
+  color: #333;
 }
 
 .form-group {
@@ -29,64 +56,192 @@
 
 .form-group label {
   display: block;
+  margin-bottom: 0.25rem;
+  color: #000;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.message-text {
+  display: block;
+  font-size: 0.75rem;
   margin-bottom: 0.5rem;
-  color: rgba(255, 255, 255, 0.87);
-  font-weight: 500;
+  color: #6b7280;
 }
 
-.form-group input {
-  width: 100%;
+.message-text.success {
+  color: #16a34a;
+}
+
+.message-text.error {
+  color: #dc2626;
+}
+
+.input-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.input-group input {
+  flex: 1;
   padding: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.87);
-  font-size: 1rem;
-  transition: border-color 0.3s ease;
+  border: 2px solid #999;
+  border-radius: 6px;
+  background: #f8f9fa;
+  color: #000;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
 }
 
-.form-group input:focus {
+.input-group input:focus {
   outline: none;
   border-color: #646cff;
-  box-shadow: 0 0 0 2px rgba(100, 108, 255, 0.2);
+  background: white;
+  box-shadow: 0 0 0 2px rgba(100, 108, 255, 0.1);
 }
 
-.form-group input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+.input-group input::placeholder {
+  color: #666;
+  font-weight: normal;
+}
+
+.check-button {
+  padding: 0.75rem 1rem;
+  background: #333;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  white-space: nowrap;
+  min-width: 80px;
+}
+
+.check-button:hover:not(:disabled) {
+  background: #555;
+}
+
+.check-button:disabled {
+  background: #999;
+  cursor: not-allowed;
+}
+
+.verify-button {
+  padding: 0.75rem 1rem;
+  background: #333;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  white-space: nowrap;
+  min-width: 70px;
+}
+
+.verify-button:hover:not(:disabled) {
+  background: #555;
+}
+
+.verify-button:disabled {
+  background: #999;
+  cursor: not-allowed;
+}
+
+.password-group {
+  position: relative;
+}
+
+.eye-button {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  color: #666;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eye-button:hover {
+  color: #333;
+}
+
+.verification-input {
+  width: 100% !important;
+}
+
+.checkbox-group {
+  margin: 1.5rem 0;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.checkbox-label input[type="checkbox"] {
+  display: none;
+}
+
+.checkmark {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #999;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkmark {
+  background: #333;
+  border-color: #333;
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkmark::after {
+  content: '✓';
+  color: white;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+
+.checkbox-text {
+  color: #555;
+  line-height: 1.4;
 }
 
 .signup-button {
   width: 100%;
   padding: 0.75rem;
-  background: #646cff;
+  background: #333;
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.3s ease;
-  margin-bottom: 1.5rem;
+  margin-top: 1rem;
 }
 
 .signup-button:hover {
-  background: #535bf2;
-}
-
-.signup-links {
-  text-align: center;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.signup-links a {
-  color: #646cff;
-  text-decoration: none;
-  margin-left: 0.5rem;
-}
-
-.signup-links a:hover {
-  color: #535bf2;
-  text-decoration: underline;
+  background: #555;
 }
 
 /* 모바일 반응형 */
@@ -99,7 +254,26 @@
     padding: 1.5rem;
   }
   
-  .signup-form h2 {
-    font-size: 1.5rem;
+  .signup-header h2 {
+    font-size: 1.3rem;
+  }
+  
+  .input-group {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .check-button,
+  .verify-button {
+    width: 100%;
+  }
+  
+  .password-group {
+    flex-direction: row !important;
+  }
+  
+  .eye-button {
+    position: absolute;
+    right: 0.75rem;
   }
 } 
