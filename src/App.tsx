@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
-import { Home, Login, SignUp } from './pages'
+import { Home, Login, SignUp, Profile } from './pages'
 import { Header, Footer } from './components'
+import ProtectedRoute from './components/ProtectedRoute'
 import './App.css'
 
 // 헤더/푸터가 있는 레이아웃 컴포넌트
@@ -34,6 +35,16 @@ function App() {
       
       {/* 회원가입 - 전체 화면 */}
       <Route path="/signup" element={<SignUp />} />
+      
+      {/* 프로필 - 로그인 필요 */}
+      <Route 
+        path="/profile" 
+        element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        } 
+      />
       
       {/* 404 페이지 */}
       <Route 

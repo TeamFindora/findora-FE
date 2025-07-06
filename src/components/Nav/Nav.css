@@ -47,6 +47,36 @@
   border-radius: 50%;
 }
 
+/* 사용자 닉네임 표시 스타일 */
+.nav-user {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  background: rgba(100, 108, 255, 0.15);
+  white-space: nowrap;
+}
+
+/* 로그아웃 버튼 스타일 */
+.logout-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.logout-button:hover {
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+}
+
 /* 태블릿 반응형 */
 @media (max-width: 1024px) {
   .nav-list {
@@ -54,6 +84,16 @@
   }
   
   .nav-link {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+  }
+  
+  .nav-user {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+  }
+  
+  .logout-button {
     padding: 0.4rem 0.8rem;
     font-size: 0.9rem;
   }
@@ -76,6 +116,16 @@
     font-size: 0.85rem;
   }
   
+  .nav-user {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+  }
+  
+  .logout-button {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+  }
+  
   .nav-link.active::after {
     bottom: -0.5rem;
     width: 3px;
@@ -90,6 +140,16 @@
   }
   
   .nav-link {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  .nav-user {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  .logout-button {
     padding: 0.3rem 0.5rem;
     font-size: 0.8rem;
   }

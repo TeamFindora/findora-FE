@@ -1,21 +1,43 @@
 .home-container {
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 60vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
   text-align: center;
+  padding: 2rem;
+}
+
+.home-content {
+  max-width: 800px;
+  width: 100%;
 }
 
 .home-content h1 {
   font-size: 3rem;
-  color: #646cff;
   margin-bottom: 1rem;
-  font-weight: bold;
+  font-weight: 700;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.home-content p {
+.home-content > p {
   font-size: 1.2rem;
-  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 3rem;
+  opacity: 0.9;
+}
+
+.user-section,
+.guest-section {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 2rem;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  margin-top: 2rem;
+}
+
+.welcome-message {
   margin-bottom: 2rem;
 }
 
@@ -29,12 +51,55 @@
 
 /* 모바일 반응형 */
 @media (max-width: 768px) {
+  .home-container {
+    padding: 1rem;
+  }
+
+  .home-content h1 {
+    font-size: 2.5rem;
+  }
+
+  .welcome-message h2 {
+    font-size: 1.5rem;
+  }
+
+  .user-section,
+  .guest-section {
+    padding: 1.5rem;
+  }
+
+  .user-actions,
+  .guest-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .action-button {
+    width: 100%;
+    max-width: 200px;
+  }
+}
+
+@media (max-width: 480px) {
   .home-content h1 {
     font-size: 2rem;
   }
-  
-  .home-content p {
+
+  .home-content > p {
     font-size: 1rem;
+  }
+
+  .welcome-message h2 {
+    font-size: 1.3rem;
+  }
+
+  .welcome-message p {
+    font-size: 1rem;
+  }
+
+  .user-section,
+  .guest-section {
+    padding: 1rem;
   }
 }
 
@@ -88,29 +153,12 @@
 }
 
 /* Ensure slick carousel takes full height */
-.slick-slider {
-  height: 100% !important;
-  width: 100% !important;
-}
-
-.slick-list {
-  height: 100% !important;
-  width: 100% !important;
-}
-
-.slick-track {
-  height: 100% !important;
-  width: 100% !important;
-  display: flex !important;
-}
-
-.slick-slide {
+.slick-slider,
+.slick-list,
+.slick-track,
+.slick-slide,
+.slick-slide > div {
   height: 100% !important;
   width: 100% !important;
   flex-shrink: 0 !important;
 }
-
-.slick-slide > div {
-  height: 100% !important;
-  width: 100% !important;
-} 

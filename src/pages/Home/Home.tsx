@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
+import { isAuthenticated, getCurrentUser } from '../../api'
 import './Home.css'
 
-// Carousel banner data
 const carouselImages = [
   {
     id: 1,
@@ -20,7 +20,6 @@ const carouselImages = [
   }
 ]
 
-// Intro section data
 const introCards = [
   {
     id: 1,
@@ -42,7 +41,6 @@ const introCards = [
   }
 ]
 
-// University rankings data
 const topUniversities = [
   {
     id: 1,
@@ -96,8 +94,34 @@ const topUniversities = [
 
 const Home = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [user, setUser] = useState<any>(null)
 
-  // Auto-advance carousel
+  useEffect(() => {
+    const checkAuthStatus = () => {
+      const loggedIn = isAuthenticated()
+      setIsLoggedIn(loggedIn)
+
+      if (loggedIn) {
+        const currentUser = getCurrentUser()
+        setUser(currentUser)
+      } else {
+        setUser(null)
+      }
+    }
+
+    checkAuthStatus()
+
+    const handleAuthChange = () => checkAuthStatus()
+    window.addEventListener('auth-change', handleAuthChange)
+
+    return () => {
+      window.removeEventListener('auth-change', handleAuthChange)
+    }
+  }, [])
+
+  // Auto-play carousel
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % carouselImages.length)
@@ -107,23 +131,16 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Carousel Section */}
+      {/* Hero Section */}
       <section className="carousel relative h-[50vh] md:h-[60vh] overflow-hidden">
-        {/* Custom Carousel */}
         <div className="relative w-full h-full">
           {carouselImages.map((image, index) => (
             <div
               key={image.id}
-              className={`absolute inset-0 transition-opacity duration-1000 ${
-                index === currentImageIndex ? 'opacity-100' : 'opacity-0'
-              }`}
+              className={`absolute inset-0 transition-opacity duration-1000 ${index === currentImageIndex ? 'opacity-100' : 'opacity-0'}`}
             >
-              <img
-                src={image.src}
-                alt={image.alt}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-black bg-opacity-40 z-10 pointer-events-none"></div>
+              <img src={image.src} alt={image.alt} className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-black bg-opacity-40 z-10 pointer-events-none" />
             </div>
           ))}
         </div>
@@ -134,14 +151,12 @@ const Home = () => {
             <button
               key={index}
               onClick={() => setCurrentImageIndex(index)}
-              className={`carousel-indicator rounded-full transition-colors ${
-                index === currentImageIndex ? 'bg-emerald-100' : 'bg-white bg-opacity-50'
-              }`}
+              className={`carousel-indicator rounded-full transition-colors ${index === currentImageIndex ? 'bg-emerald-100' : 'bg-white bg-opacity-50'}`}
             />
           ))}
         </div>
 
-        {/* Search Box - Bottom Center */}
+        {/* Search Box */}
         <div className="search-container absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md px-4 z-30">
           <div className="search-div flex-col">
             <h1 className="antialiased font-bold tracking-wide text-5xl mb-5 text-center text-white">Find your aurora</h1>
@@ -152,85 +167,78 @@ const Home = () => {
                 className="bg-gray-800/50 w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               />
               <button className="bg-gray-100/0 text-white py-3 rounded-lg font-semibold transition-colors text-sm">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="size-5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-                      </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="size-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                </svg>
               </button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Intro Section */}
+      {/* Optional welcome message */}
+      {(isLoggedIn && user) && (
+        <div className="user-section text-center">
+          <div className="welcome-message">
+            <h2>안녕하세요, {user.nickname}님! 👋</h2>
+            <p>오늘도 좋은 하루 보내세요!</p>
+          </div>
+        </div>
+      )}
+
+      {/* Intro Cards */}
       <section className="py-12 px-8 bg-white">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {introCards.map((card) => (
-              <div
-                key={card.id}
-                className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 p-6 border border-gray-100"
-              >
-                <div className="text-3xl mb-3 group-hover:scale-110 transition-transform duration-300">
-                  {card.icon}
-                </div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                  {card.title}
-                </h3>
-                <p className="text-gray-600 text-sm leading-relaxed">
-                  {card.description}
-                </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {introCards.map((card) => (
+            <div key={card.id} className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 p-6 border border-gray-100">
+              <div className="text-3xl mb-3 group-hover:scale-110 transition-transform duration-300">
+                {card.icon}
               </div>
-            ))}
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">{card.title}</h3>
+              <p className="text-gray-600 text-sm leading-relaxed">{card.description}</p>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* University Rankings Section */}
+      {/* Top Universities */}
       <section className="top-uni-ranks py-12 px-8 bg-gray-50">
-      <h2 className="text-1xl md:text-2xl font-bold text-gray-800 mb-8">
-        Top University Rankings
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {topUniversities.map((university) => (
-          <div
-            key={university.id}
-            className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 px-6 py-4 border border-gray-100 flex justify-between items-center"
-          >
-            {/* 순위 원형 */}
-            <div className="university-rank w-10 h-10 md:w-12 md:h-12 text-black rounded-full flex items-center justify-center font-bold text-l md:text-lg flex-shrink-0 mr-4">
-              {university.rank}
-            </div>
-
-            {/* 대학명, 국가 */}
-            <div className="flex-1">
-              <h3 className="text-base md:text-lg font-semibold text-gray-800">
-                {university.name}
-              </h3>
-              <p className="text-gray-500 text-sm">{university.country}</p>
-            </div>
-
-            {/* 로고 */}
-            <div className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center ml-4">
-              <img
-                src={university.logo}
-                alt={`${university.name} logo`}
-                className="w-full h-full object-contain"
-                onError={(e) => {
-                  const target = e.currentTarget as HTMLImageElement;
-                  target.style.display = 'none';
-                  const fallback = target.nextElementSibling as HTMLElement;
-                  if (fallback) fallback.style.display = 'flex';
-                }}
-              />
-              <div className="hidden w-full h-full bg-gray-200 rounded items-center justify-center text-gray-500 text-xs font-semibold">
-                LOGO
+        <h2 className="text-1xl md:text-2xl font-bold text-gray-800 mb-8">Top University Rankings</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {topUniversities.map((university) => (
+            <div
+              key={university.id}
+              className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 px-6 py-4 border border-gray-100 flex justify-between items-center"
+            >
+              <div className="university-rank w-10 h-10 md:w-12 md:h-12 text-black rounded-full flex items-center justify-center font-bold text-l md:text-lg flex-shrink-0 mr-4">
+                {university.rank}
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base md:text-lg font-semibold text-gray-800">{university.name}</h3>
+                <p className="text-gray-500 text-sm">{university.country}</p>
+              </div>
+              <div className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center ml-4">
+                <img
+                  src={university.logo}
+                  alt={`${university.name} logo`}
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    const target = e.currentTarget as HTMLImageElement;
+                    target.style.display = 'none';
+                    const fallback = target.nextElementSibling as HTMLElement;
+                    if (fallback) fallback.style.display = 'flex';
+                  }}
+                />
+                <div className="hidden w-full h-full bg-gray-200 rounded items-center justify-center text-gray-500 text-xs font-semibold">
+                  LOGO
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
-  </section>
-
+          ))}
+        </div>
+      </section>
     </div>
   )
 }
 
-export default Home 
+export default Home
