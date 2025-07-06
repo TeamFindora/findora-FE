@@ -19,6 +19,14 @@
   margin-bottom: 2rem;
 }
 
+.carousel-indicator {
+  width: 10px !important;
+  height: 10px !important;
+  padding: 0 !important;
+  border: none !important;
+  outline: none;
+}
+
 /* 모바일 반응형 */
 @media (max-width: 768px) {
   .home-content h1 {
@@ -28,4 +36,81 @@
   .home-content p {
     font-size: 1rem;
   }
+}
+
+/* Custom styles to complement Tailwind CSS */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Custom slick carousel dots */
+.custom-dots {
+  bottom: 20px !important;
+}
+
+.custom-dots li button:before {
+  color: white !important;
+  opacity: 0.5 !important;
+  font-size: 12px !important;
+}
+
+.custom-dots li.slick-active button:before {
+  color: white !important;
+  opacity: 1 !important;
+}
+
+/* Smooth transitions for better UX */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Ensure slick carousel takes full height */
+.slick-slider {
+  height: 100% !important;
+  width: 100% !important;
+}
+
+.slick-list {
+  height: 100% !important;
+  width: 100% !important;
+}
+
+.slick-track {
+  height: 100% !important;
+  width: 100% !important;
+  display: flex !important;
+}
+
+.slick-slide {
+  height: 100% !important;
+  width: 100% !important;
+  flex-shrink: 0 !important;
+}
+
+.slick-slide > div {
+  height: 100% !important;
+  width: 100% !important;
 } 

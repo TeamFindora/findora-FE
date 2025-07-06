@@ -12,22 +12,20 @@
 /* 메인 컨텐츠 */
 .main-content {
   flex: 1;
-  padding: 2rem;
-  display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* 모바일 반응형 스타일 */
+/* 모바일 반응형 스타일 
 @media (max-width: 768px) {
   .main-content {
-    padding: 1rem;
   }
 }
+*/
 
-/* 태블릿 반응형 스타일 */
+/* 태블릿 반응형 스타일 
 @media (max-width: 1024px) and (min-width: 769px) {
   .main-content {
-    padding: 1.5rem;
   }
 }
+*/

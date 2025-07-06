@@ -7,7 +7,7 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  gap: 2rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
 }
 
@@ -27,13 +27,12 @@
 }
 
 .nav-link:hover {
-  color: #646cff;
-  background: rgba(100, 108, 255, 0.1);
+  color: #B8DCCC;
+  background: rgba(184, 220, 204, 0.1);
 }
 
 .nav-link.active {
-  color: #646cff;
-  background: rgba(100, 108, 255, 0.2);
+  color: #B8DCCC;
 }
 
 .nav-link.active::after {
@@ -44,14 +43,14 @@
   transform: translateX(-50%);
   width: 4px;
   height: 4px;
-  background: #646cff;
+  background: #B8DCCC;
   border-radius: 50%;
 }
 
 /* 태블릿 반응형 */
 @media (max-width: 1024px) {
   .nav-list {
-    gap: 1.5rem;
+    gap: 0.5rem;
   }
   
   .nav-link {
@@ -67,7 +66,7 @@
   }
   
   .nav-list {
-    gap: 1rem;
+    gap: 0.5rem;
     justify-content: center;
     flex-wrap: wrap;
   }
@@ -87,7 +86,7 @@
 /* 작은 모바일 화면 */
 @media (max-width: 480px) {
   .nav-list {
-    gap: 0.5rem;
+    gap: 0.3rem;
   }
   
   .nav-link {
