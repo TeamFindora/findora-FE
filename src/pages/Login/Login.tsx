@@ -1,7 +1,14 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { login } from '../../api'
 import './Login.css'
+
+// 카카오 SDK 타입 선언
+declare global {
+  interface Window {
+    Kakao: any;
+  }
+}
 
 const Login = () => {
   const navigate = useNavigate()
@@ -10,6 +17,29 @@ const Login = () => {
     username: '',
     password: ''
   })
+
+  // 카카오 SDK 초기화
+  useEffect(() => {
+    const initKakao = () => {
+      if (window.Kakao && !window.Kakao.isInitialized()) {
+        window.Kakao.init('ea9605c21ee2189302c49a7bddddd198')
+        console.log('카카오 SDK 초기화 완료')
+      }
+    }
+
+    // SDK 로드 대기
+    if (window.Kakao) {
+      initKakao()
+    } else {
+      // SDK 로드 대기
+      const checkKakao = setInterval(() => {
+        if (window.Kakao) {
+          initKakao()
+          clearInterval(checkKakao)
+        }
+      }, 100)
+    }
+  }, [])
 
   const handleClose = () => {
     navigate('/')
@@ -47,6 +77,79 @@ const Login = () => {
       }
     } catch (error) {
       alert('로그인 중 오류가 발생했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 카카오 로그인 처리
+  const handleKakaoLogin = () => {
+    console.log('카카오 로그인 버튼 클릭됨')
+    console.log('window.Kakao:', window.Kakao)
+    
+    if (window.Kakao) {
+      window.Kakao.Auth.login({
+        success: function(authObj: any) {
+          console.log('카카오 로그인 성공:', authObj)
+          
+          // 카카오 사용자 정보 가져오기
+          window.Kakao.API.request({
+            url: '/v2/user/me',
+            success: function(res: any) {
+              console.log('카카오 사용자 정보:', res)
+              
+              // 백엔드로 카카오 사용자 정보 전송
+              handleKakaoAuth(res, authObj.access_token)
+            },
+            fail: function(error: any) {
+              console.error('카카오 사용자 정보 요청 실패:', error)
+              alert('카카오 로그인 중 오류가 발생했습니다.')
+            }
+          })
+        },
+        fail: function(err: any) {
+          console.error('카카오 로그인 실패:', err)
+          alert('카카오 로그인에 실패했습니다.')
+        }
+      })
+    } else {
+      alert('카카오 SDK를 불러올 수 없습니다.')
+    }
+  }
+
+  // 백엔드로 카카오 인증 정보 전송
+  const handleKakaoAuth = async (userInfo: any, accessToken: string) => {
+    try {
+      setLoading(true)
+      
+      // 백엔드 API 호출 (임시로 콘솔에 출력)
+      console.log('백엔드로 전송할 데이터:', {
+        kakaoId: userInfo.id,
+        email: userInfo.kakao_account?.email,
+        nickname: userInfo.properties?.nickname,
+        accessToken: accessToken
+      })
+
+      // TODO: 실제 백엔드 API 호출
+      // const response = await fetch('/api/auth/kakao', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify({
+      //     kakaoId: userInfo.id,
+      //     email: userInfo.kakao_account?.email,
+      //     nickname: userInfo.properties?.nickname,
+      //     accessToken: accessToken
+      //   })
+      // })
+
+      // 임시로 성공 처리
+      alert('카카오 로그인 성공! (백엔드 연동 필요)')
+      
+    } catch (error) {
+      console.error('카카오 인증 오류:', error)
+      alert('카카오 로그인 중 오류가 발생했습니다.')
     } finally {
       setLoading(false)
     }
@@ -100,9 +203,13 @@ const Login = () => {
           <span>or</span>
         </div>
         
-        <button className="kakao-login-button">
+        <button 
+          className="kakao-login-button"
+          onClick={handleKakaoLogin}
+          disabled={loading}
+        >
           <span className="kakao-icon">💬</span>
-          카카오 로그인
+          {loading ? '로그인 중...' : '카카오 로그인'}
         </button>
         
         <div className="login-links">
