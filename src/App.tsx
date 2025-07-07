@@ -2,6 +2,8 @@ import { Routes, Route } from 'react-router-dom'
 import { Home, Login, SignUp, Profile, Admission, Research, Community } from './pages'
 import { Header, Footer } from './components'
 import ProtectedRoute from './components/ProtectedRoute'
+import PostDetail from './pages/Community/PostDetail'
+import WritePost from './pages/Community/WritePost'
 import './App.css'
 
 // 헤더/푸터가 있는 레이아웃 컴포넌트
@@ -47,6 +49,28 @@ function App() {
           <Layout>
             <Community />
           </Layout>
+        } 
+      />
+
+      {/* 커뮤니티 게시글 상세 */}
+      <Route 
+        path="/community/post/:id" 
+        element={
+          <Layout>
+            <PostDetail />
+          </Layout>
+        } 
+      />
+
+      {/* 커뮤니티 글쓰기 */}
+      <Route 
+        path="/community/write" 
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <WritePost />
+            </Layout>
+          </ProtectedRoute>
         } 
       />
 
