@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
-import { Home, Login, SignUp, Profile } from './pages'
+import { Home, Login, SignUp, Profile, Admission, Research, Community } from './pages'
 import { Header, Footer } from './components'
 import ProtectedRoute from './components/ProtectedRoute'
 import './App.css'
@@ -26,6 +26,36 @@ function App() {
         element={
           <Layout>
             <Home />
+          </Layout>
+        } 
+      />
+
+      {/* 입시관 */}
+      <Route 
+        path="/admission" 
+        element={
+          <Layout>
+            <Admission />
+          </Layout>
+        } 
+      />
+
+      {/* 커뮤니티 */}
+      <Route 
+        path="/community" 
+        element={
+          <Layout>
+            <Community />
+          </Layout>
+        } 
+      />
+
+      {/* 연구실/교수평가 */}
+      <Route 
+        path="/research" 
+        element={
+          <Layout>
+            <Research />
           </Layout>
         } 
       />
