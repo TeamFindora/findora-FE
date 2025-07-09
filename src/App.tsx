@@ -4,6 +4,7 @@ import { Header, Footer } from './components'
 import ProtectedRoute from './components/ProtectedRoute'
 import PostDetail from './pages/Community/PostDetail'
 import WritePost from './pages/Community/WritePost'
+import Verify from './pages/Admission/verify'
 import './App.css'
 
 // 헤더/푸터가 있는 레이아웃 컴포넌트
@@ -38,6 +39,16 @@ function App() {
         element={
           <Layout>
             <Admission />
+          </Layout>
+        } 
+      />
+
+      {/* 입시관 인증 */}
+      <Route 
+        path="/admission/verify" 
+        element={
+          <Layout>
+            <Verify />
           </Layout>
         } 
       />

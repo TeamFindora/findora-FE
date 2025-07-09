@@ -5,7 +5,6 @@ import { useState, useMemo } from 'react'
 const Community = () => {
   const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('all')
   const [sortBy, setSortBy] = useState('latest')
   const [currentPage, setCurrentPage] = useState(1)
   const postsPerPage = 5
@@ -17,8 +16,7 @@ const Community = () => {
       writer: 'skywalker', 
       comments: 3,
       views: 156,
-      createdAt: '2024-01-15',
-      category: 'question'
+      createdAt: '2024-01-15'
     },
     { 
       id: 2, 
@@ -26,8 +24,7 @@ const Community = () => {
       writer: 'dreamer', 
       comments: 5,
       views: 89,
-      createdAt: '2024-01-14',
-      category: 'info'
+      createdAt: '2024-01-14'
     },
     { 
       id: 3, 
@@ -35,8 +32,7 @@ const Community = () => {
       writer: 'neo', 
       comments: 2,
       views: 234,
-      createdAt: '2024-01-13',
-      category: 'review'
+      createdAt: '2024-01-13'
     },
     { 
       id: 4, 
@@ -44,8 +40,7 @@ const Community = () => {
       writer: 'interview_expert', 
       comments: 8,
       views: 567,
-      createdAt: '2024-01-12',
-      category: 'info'
+      createdAt: '2024-01-12'
     },
     { 
       id: 5, 
@@ -53,8 +48,7 @@ const Community = () => {
       writer: 'ai_study', 
       comments: 4,
       views: 123,
-      createdAt: '2024-01-11',
-      category: 'study'
+      createdAt: '2024-01-11'
     },
     { 
       id: 6, 
@@ -62,8 +56,7 @@ const Community = () => {
       writer: 'grad_life', 
       comments: 12,
       views: 789,
-      createdAt: '2024-01-10',
-      category: 'review'
+      createdAt: '2024-01-10'
     },
     { 
       id: 7, 
@@ -71,8 +64,7 @@ const Community = () => {
       writer: 'lab_guide', 
       comments: 6,
       views: 456,
-      createdAt: '2024-01-09',
-      category: 'info'
+      createdAt: '2024-01-09'
     },
     { 
       id: 8, 
@@ -80,18 +72,8 @@ const Community = () => {
       writer: 'paper_writer', 
       comments: 15,
       views: 1023,
-      createdAt: '2024-01-08',
-      category: 'info'
+      createdAt: '2024-01-08'
     }
-  ]
-
-  const categories = [
-    { value: 'all', label: '전체' },
-    { value: 'general', label: '일반' },
-    { value: 'question', label: '질문' },
-    { value: 'review', label: '후기' },
-    { value: 'info', label: '정보공유' },
-    { value: 'study', label: '스터디' }
   ]
 
   const sortOptions = [
@@ -106,15 +88,12 @@ const Community = () => {
   const filteredAndSortedPosts = useMemo(() => {
     // 1. 필터링
     let filtered = mockPosts.filter(post => {
-      // 카테고리 필터링
-      const categoryMatch = selectedCategory === 'all' || post.category === selectedCategory
-      
-      // 검색어 필터링 (제목, 작성자, 내용에서 검색)
+      // 검색어 필터링 (제목, 작성자에서 검색)
       const searchMatch = searchTerm === '' || 
         post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         post.writer.toLowerCase().includes(searchTerm.toLowerCase())
       
-      return categoryMatch && searchMatch
+      return searchMatch
     })
 
     // 2. 정렬
@@ -139,7 +118,7 @@ const Community = () => {
     })
 
     return filtered
-  }, [mockPosts, searchTerm, selectedCategory, sortBy])
+  }, [mockPosts, searchTerm, sortBy])
 
   // 페이지네이션 계산
   const totalPages = Math.ceil(filteredAndSortedPosts.length / postsPerPage)
@@ -152,7 +131,7 @@ const Community = () => {
     .sort((a, b) => (b.views + b.comments * 10) - (a.views + a.comments * 10))
     .slice(0, 3)
 
-  // 자유게시판: 전체/일반/질문/후기/정보공유/스터디
+  // 자유게시판: 전체 게시글
   const freeBoardPosts = filteredAndSortedPosts
   // 베스트게시판: 인기순 정렬(조회수+댓글수)
   const bestBoardPosts = [...filteredAndSortedPosts].sort((a, b) => (b.views + b.comments * 10) - (a.views + a.comments * 10))
@@ -169,11 +148,6 @@ const Community = () => {
     setCurrentPage(1)
   }
 
-  const handleCategoryChange = (category: string) => {
-    setSelectedCategory(category)
-    setCurrentPage(1)
-  }
-
   const handleSortChange = (sort: string) => {
     setSortBy(sort)
     setCurrentPage(1)
@@ -186,7 +160,6 @@ const Community = () => {
 
   const clearSearch = () => {
     setSearchTerm('')
-    setSelectedCategory('all')
     setSortBy('latest')
     setCurrentPage(1)
   }
@@ -224,29 +197,9 @@ const Community = () => {
               </button>
             </div>
 
-            {/* 카테고리 필터 및 정렬 */}
+            {/* 정렬 옵션 */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-medium text-gray-700">카테고리:</span>
-                <div className="flex gap-2">
-                  {categories.map(category => (
-                    <button
-                      key={category.value}
-                      type="button"
-                      onClick={() => handleCategoryChange(category.value)}
-                      className={`px-3 py-1 rounded-full text-sm transition ${
-                        selectedCategory === category.value
-                          ? 'bg-[#B8DCCC] text-black font-bold dark:bg-[#B8DCCC] dark:text-black'
-                          : 'bg-gray-600 text-white hover:bg-gray-500 dark:bg-gray-400 dark:text-black dark:hover:bg-gray-300'
-                      }`}
-                    >
-                      {category.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 정렬 옵션 */}
+              <div></div> {/* 왼쪽 공간 */}
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-gray-700 text-black">정렬:</span>
                 <select
@@ -264,7 +217,7 @@ const Community = () => {
             </div>
 
             {/* 초기화 버튼 */}
-            {(searchTerm || selectedCategory !== 'all' || sortBy !== 'latest') && (
+            {(searchTerm || sortBy !== 'latest') && (
               <div className="flex justify-end">
                 <button
                   type="button"
@@ -357,11 +310,6 @@ const Community = () => {
                   <div className="text-xs text-gray-500 mt-1">
                     {post.createdAt}
                   </div>
-                </div>
-                <div className="ml-4">
-                  <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                    {categories.find(cat => cat.value === post.category)?.label || '일반'}
-                  </span>
                 </div>
               </div>
             </div>
