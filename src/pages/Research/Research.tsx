@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import '../Home/Home.css'
 
@@ -25,7 +26,7 @@ const Research = () => {
 
   return (
     <div className="min-h-screen bg-white text-white">
-      <div className="max-w-6xl mx-auto">
+      <div className="research-list-wrap">
         {/* Header */}
         <div className="text-center py-20 bg-zinc-100">
           <h1 className="text-3xl font-bold text-black mb-2">연구실 / 교수 평가</h1>
@@ -35,7 +36,7 @@ const Research = () => {
         </div>
 
         {/* 필터 */}
-        <div className="research-table-wrap py-10 px-10">
+        <div className="research-table-wrap py-10 px-40">
           <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
             <input
               type="text"
@@ -52,11 +53,15 @@ const Research = () => {
           {/* 연구실 리스트 */}
           <div className="research-list grid grid-cols-1 gap-6">
             {currentLabs.map((lab) => (
-              <div key={lab.id} className="research-list-item bg-white text-black rounded-lg p-6 shadow-md hover:-translate-y-1 transition">
-                <h3 className="font-semibold text-lg text-[#B8DCCC] mb-1">{lab.name}</h3>
-                <p className="text-sm text-gray-700 mb-2">지도교수: {lab.professor}</p>
-                <p className="text-sm">평균 평점: ⭐ {lab.score}</p>
-              </div>
+              <Link
+                to = "/research/detail"
+              >
+                <div key={lab.id} className="research-list-item bg-white text-black rounded-lg p-6 shadow-md hover:-translate-y-1 transition">
+                  <h3 className="font-semibold text-lg text-[#B8DCCC] mb-1">{lab.name}</h3>
+                  <p className="text-sm text-gray-700 mb-2">지도교수: {lab.professor}</p>
+                  <p className="text-sm">평균 평점: ⭐ {lab.score}</p>
+                </div>
+              </Link>
             ))}
           </div>
 
