@@ -1,16 +1,15 @@
 import '../Home/Home.css'
 import { useNavigate } from 'react-router-dom'
 import { useState, useMemo, useEffect } from 'react'
-import { postsApi, CATEGORIES } from '../../api/posts'
+import { postsApi } from '../../api/posts'
 import type { PostResponseDto } from '../../api/posts'
 
-const Community = () => {
+const FreeBoard = () => {
   const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState('latest')
   const [currentPage, setCurrentPage] = useState(1)
-  const postsPerPage = 5
-  const [activeTab, setActiveTab] = useState<'free' | 'best'>('free')
+  const postsPerPage = 10
   const [posts, setPosts] = useState<PostResponseDto[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -21,22 +20,21 @@ const Community = () => {
       try {
         setLoading(true)
         const allPosts = await postsApi.getAllPosts()
-        console.log('API 응답 데이터:', allPosts) // 디버깅용 로그
+        console.log('FreeBoard API 응답 데이터:', allPosts)
         
-        // API 응답이 배열인지 확인하고 설정
         if (Array.isArray(allPosts)) {
-          console.log('API 데이터 사용:', allPosts.length, '개의 게시글')
+          console.log('FreeBoard API 데이터 사용:', allPosts.length, '개의 게시글')
           setPosts(allPosts)
         } else if (allPosts && typeof allPosts === 'object' && 'data' in allPosts && Array.isArray((allPosts as any).data)) {
-          console.log('API data 필드 사용:', (allPosts as any).data.length, '개의 게시글')
+          console.log('FreeBoard API data 필드 사용:', (allPosts as any).data.length, '개의 게시글')
           setPosts((allPosts as any).data)
         } else {
-          console.log('API 응답이 예상과 다름:', allPosts)
+          console.log('FreeBoard API 응답이 예상과 다름:', allPosts)
           setPosts([])
         }
         setError(null)
       } catch (err) {
-        console.error('게시글 로드 실패:', err)
+        console.error('FreeBoard 게시글 로드 실패:', err)
         setError('게시글을 불러오는데 실패했습니다.')
         setPosts([])
       } finally {
@@ -127,7 +125,7 @@ const Community = () => {
   const filteredAndSortedPosts = useMemo(() => {
     // API 데이터가 있으면 사용, 없으면 임시 데이터 사용
     const dataToUse = posts && posts.length > 0 ? posts : mockPosts
-    console.log('사용할 데이터:', dataToUse.length, '개') // 디버깅용 로그
+    console.log('FreeBoard 사용할 데이터:', dataToUse.length, '개')
     
     // 1. 필터링
     let filtered = dataToUse.filter(post => {
@@ -175,22 +173,10 @@ const Community = () => {
   const endIndex = startIndex + postsPerPage
   const currentPosts = filteredAndSortedPosts.slice(startIndex, endIndex)
 
-  // 인기 게시글 - API 데이터가 있으면 최신순, 없으면 임시 데이터 사용
-  const popularPosts = posts && posts.length > 0 
-    ? [...posts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 3)
-    : [...mockPosts].sort((a, b) => (b.views + b.comments * 10) - (a.views + a.comments * 10)).slice(0, 3)
-
-  // 자유게시판: 전체 게시글
-  const freeBoardPosts = filteredAndSortedPosts
-  // 베스트게시판: API 데이터가 있으면 최신순, 없으면 임시 데이터 사용
-  const bestBoardPosts = posts && posts.length > 0 
-    ? [...posts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    : [...mockPosts].sort((a, b) => (b.views + b.comments * 10) - (a.views + a.comments * 10))
-
   // 페이지 변경 시 상단으로 스크롤
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
-    // window.scrollTo({ top: 0, behavior: 'smooth' }) // 페이지 상단 스크롤 제거
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   // 검색어나 필터 변경 시 페이지 초기화
@@ -216,13 +202,13 @@ const Community = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white py-12 px-4">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-white text-white">
+      <div className="text-center py-20 bg-zinc-100">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-3xl font-bold text-[#B8DCCC] mb-2">커뮤니티</h1>
+          <h1 className="text-3xl font-bold text-[#B8DCCC] mb-2">자유 게시판</h1>
           <p className="text-gray-300 text-sm">
-            질문하고 나누는 자유로운 공간입니다.
+            자유롭게 의견을 나누는 공간입니다.
           </p>
         </div>
 
@@ -249,7 +235,7 @@ const Community = () => {
 
         {/* 검색 및 필터링 */}
         {!loading && !error && (
-          <div className="bg-white rounded-lg p-6 mb-6">
+        <div className="bg-white rounded-lg p-6 mb-6">
           <form onSubmit={handleSearch} className="space-y-4">
             {/* 검색바 */}
             <div className="flex gap-4">
@@ -303,115 +289,128 @@ const Community = () => {
             )}
           </form>
         </div>
-        )}
 
         {/* 글쓰기 버튼 */}
-        {!loading && !error && (
-          <div className="text-right mb-6">
-            <button 
-              onClick={() => navigate('/community/write')}
-              className="bg-[#B8DCCC] text-black font-semibold px-4 py-2 rounded hover:bg-opacity-90 transition"
-            >
-              ✍ 글쓰기
-            </button>
-          </div>
-        )}
+        <div className="text-right mb-6">
+          <button 
+            onClick={() => navigate('/community/write')}
+            className="bg-[#B8DCCC] text-black font-semibold px-4 py-2 rounded hover:bg-opacity-90 transition"
+          >
+            ✍ 글쓰기
+          </button>
+        </div>
 
         {/* 검색 결과 표시 */}
-        {!loading && !error && filteredAndSortedPosts && (
-          filteredAndSortedPosts.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-gray-500 text-lg mb-2">검색 결과가 없습니다</div>
-              <button
-                onClick={clearSearch}
-                className="text-[#B8DCCC] hover:text-white transition"
-              >
-                검색 조건 초기화
-              </button>
-            </div>
-          ) : (
-            <div className="mb-4 text-sm text-gray-300">
-              총 {filteredAndSortedPosts.length}개의 게시글 (페이지 {currentPage}/{totalPages})
-            </div>
-          )
-        )}
-
-        {/* 상단 실시간 인기 게시글 */}
         {!loading && !error && (
-          <div className="mb-12">
-            <h2 className="text-xl font-bold text-[#B8DCCC] mb-4">실시간 인기게시글</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {popularPosts.map(post => (
+          <>
+            {filteredAndSortedPosts.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-gray-500 text-lg mb-2">검색 결과가 없습니다</div>
+                <button
+                  onClick={clearSearch}
+                  className="text-[#B8DCCC] hover:text-white transition"
+                >
+                  검색 조건 초기화
+                </button>
+              </div>
+            ) : (
+              <div className="mb-4 text-sm text-gray-300">
+                총 {filteredAndSortedPosts.length}개의 게시글 (페이지 {currentPage}/{totalPages})
+              </div>
+            )}
+
+            {/* 게시글 목록 */}
+            <div className="space-y-4 mb-8">
+              {currentPosts.map(post => (
                 <div
                   key={post.id}
                   className="bg-white text-black rounded-lg px-6 py-4 shadow hover:-translate-y-1 transition cursor-pointer hover:shadow-lg"
                   onClick={() => navigate(`/community/post/${post.id}`)}
                 >
-                  <h3 className="text-lg font-semibold text-[#B8DCCC] mb-2">{post.title}</h3>
-                  <div className="text-sm text-gray-600 mb-1">작성자: {'userNickname' in post ? post.userNickname : (post as any).writer}</div>
-                  <div className="text-xs text-gray-500 mb-1">{post.createdAt}</div>
-                  <div className="text-xs text-gray-700">조회수: {'views' in post ? (post as any).views : 0} · 댓글: {'comments' in post ? (post as any).comments : 0}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 게시판 탭 */}
-        {!loading && !error && (
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex gap-2">
-              <button
-                className={`px-4 py-2 rounded font-semibold transition ${activeTab === 'free' ? 'bg-[#B8DCCC] text-black' : 'bg-gray-600 text-white hover:bg-gray-500'}`}
-                onClick={() => setActiveTab('free')}
-              >
-                자유 게시판
-              </button>
-              <button
-                className={`px-4 py-2 rounded font-semibold transition ${activeTab === 'best' ? 'bg-[#B8DCCC] text-black' : 'bg-gray-600 text-white hover:bg-gray-500'}`}
-                onClick={() => setActiveTab('best')}
-              >
-                베스트 게시판
-              </button>
-            </div>
-            <button
-              onClick={() => navigate(`/community/${activeTab}`)}
-              className="px-4 py-2 bg-[#B8DCCC] text-black font-semibold rounded hover:bg-opacity-90 transition"
-            >
-              더보기
-            </button>
-          </div>
-        )}
-
-        {/* 게시글 목록 (탭에 따라 다르게) - 최대 5개만 표시 */}
-        {!loading && !error && (
-          <div className="space-y-4">
-            {(activeTab === 'free' ? currentPosts : bestBoardPosts.slice(0, 5)).map(post => (
-              <div
-                key={post.id}
-                className="bg-white text-black rounded-lg px-6 py-4 shadow hover:-translate-y-1 transition cursor-pointer hover:shadow-lg"
-                onClick={() => navigate(`/community/post/${post.id}`)}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-[#B8DCCC]">{post.title}</h3>
-                    <div className="text-sm text-gray-600 mt-1">
-                      작성자: {'userNickname' in post ? post.userNickname : (post as any).writer} · 
-                      💬 {'comments' in post ? (post as any).comments : 0} 댓글 · 
-                      👁️ {'views' in post ? (post as any).views : 0} 조회
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {post.createdAt}
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-[#B8DCCC]">{post.title}</h3>
+                      <div className="text-sm text-gray-600 mt-1">
+                        작성자: {'userNickname' in post ? post.userNickname : (post as any).writer} · 💬 {'comments' in post ? (post as any).comments : 0} 댓글 · 👁️ {'views' in post ? (post as any).views : 0} 조회
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {post.createdAt}
+                      </div>
                     </div>
                   </div>
                 </div>
+              ))}
+            </div>
+
+            {/* 페이지네이션 */}
+            {totalPages > 1 && (
+              <div className="flex justify-center mt-8">
+                <div className="flex items-center space-x-2">
+                  {/* 이전 페이지 */}
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 transition text-black"
+                  >
+                    이전
+                  </button>
+
+                  {/* 페이지 번호 */}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                    // 현재 페이지 주변 5개 페이지만 표시
+                    if (
+                      page === 1 ||
+                      page === totalPages ||
+                      (page >= currentPage - 2 && page <= currentPage + 2)
+                    ) {
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => handlePageChange(page)}
+                          className={`px-3 py-2 rounded-lg text-sm transition ${
+                            currentPage === page
+                              ? 'bg-[#B8DCCC] text-black font-semibold'
+                              : 'border border-gray-300 hover:bg-gray-200 text-black'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      )
+                    } else if (
+                      page === currentPage - 3 ||
+                      page === currentPage + 3
+                    ) {
+                      return <span key={page} className="px-2 text-gray-500">...</span>
+                    }
+                    return null
+                  })}
+
+                  {/* 다음 페이지 */}
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 transition text-black"
+                  >
+                    다음
+                  </button>
+                </div>
               </div>
-            ))}
-          </div>
+            )}
+
+            {/* 뒤로가기 버튼 */}
+            <div className="text-center mt-8">
+              <button
+                onClick={() => navigate('/community')}
+                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+              >
+                ← 커뮤니티로 돌아가기
+              </button>
+            </div>
+          </>
         )}
       </div>
     </div>
   )
 }
 
-export default Community
+export default FreeBoard 

@@ -4,6 +4,8 @@ import { Header, Footer } from './components'
 import ProtectedRoute from './components/ProtectedRoute'
 import PostDetail from './pages/Community/PostDetail'
 import WritePost from './pages/Community/WritePost'
+import FreeBoard from './pages/Community/FreeBoard'
+import BestBoard from './pages/Community/BestBoard'
 import Verify from './pages/Admission/verify'
 import './App.css'
 
@@ -82,6 +84,26 @@ function App() {
               <WritePost />
             </Layout>
           </ProtectedRoute>
+        } 
+      />
+
+      {/* 자유 게시판 */}
+      <Route 
+        path="/community/free" 
+        element={
+          <Layout>
+            <FreeBoard />
+          </Layout>
+        } 
+      />
+
+      {/* 베스트 게시판 */}
+      <Route 
+        path="/community/best" 
+        element={
+          <Layout>
+            <BestBoard />
+          </Layout>
         } 
       />
 

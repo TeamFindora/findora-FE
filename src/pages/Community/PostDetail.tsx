@@ -1,11 +1,90 @@
 import { useParams, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import '../Home/Home.css'
+import { postsApi, commentsApi } from '../../api/posts'
+import type { PostResponseDto, CommentResponseDto } from '../../api/posts'
 
 const PostDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const [post, setPost] = useState<PostResponseDto | null>(null)
+  const [comments, setComments] = useState<CommentResponseDto[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [commentContent, setCommentContent] = useState('')
+  const [submittingComment, setSubmittingComment] = useState(false)
 
-  // Mock 데이터 (실제로는 API에서 가져올 예정)
+  // 게시글 데이터 로드
+  useEffect(() => {
+    const loadPost = async () => {
+      if (!id) return
+      
+      try {
+        setLoading(true)
+        const postData = await postsApi.getPostById(Number(id))
+        setPost(postData)
+        setError(null)
+      } catch (err) {
+        console.error('게시글 로드 실패:', err)
+        setError('게시글을 불러오는데 실패했습니다.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadPost()
+  }, [id])
+
+  // 댓글 데이터 로드
+  useEffect(() => {
+    const loadComments = async () => {
+      if (!id) return
+      
+      try {
+        const commentsData = await commentsApi.getCommentsByPostId(Number(id))
+        console.log('댓글 API 응답:', commentsData)
+        setComments(commentsData)
+      } catch (err) {
+        console.error('댓글 로드 실패:', err)
+        // 댓글 로드 실패는 에러로 처리하지 않고 빈 배열로 설정
+        setComments([])
+      }
+    }
+
+    if (post) {
+      loadComments()
+    }
+  }, [id, post])
+
+  // 댓글 작성
+  const handleSubmitComment = async () => {
+    if (!id || !commentContent.trim()) return
+
+    try {
+      setSubmittingComment(true)
+      const userId = Number(localStorage.getItem('userId')) || 1 // 임시로 1 사용
+      
+      await commentsApi.createComment({
+        postId: Number(id),
+        userId: userId,
+        content: commentContent.trim()
+      })
+      
+      // 댓글 목록 새로고침
+      const updatedComments = await commentsApi.getCommentsByPostId(Number(id))
+      setComments(updatedComments)
+      
+      // 입력 필드 초기화
+      setCommentContent('')
+    } catch (err) {
+      console.error('댓글 작성 실패:', err)
+      alert('댓글 작성에 실패했습니다.')
+    } finally {
+      setSubmittingComment(false)
+    }
+  }
+
+  // Mock 데이터 (API 연동 전까지 사용)
   const mockPost = {
     id: Number(id),
     title: '석사 준비 중인데 연구실 추천 좀 부탁드려요!',
@@ -48,6 +127,39 @@ const PostDetail = () => {
     }
   ]
 
+  // 로딩 상태
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black text-white py-12 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="text-gray-500 text-lg">게시글을 불러오는 중...</div>
+        </div>
+      </div>
+    )
+  }
+
+  // 에러 상태
+  if (error) {
+    return (
+      <div className="min-h-screen bg-black text-white py-12 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="text-red-500 text-lg mb-4">{error}</div>
+          <button
+            onClick={() => window.location.reload()}
+            className="text-[#B8DCCC] hover:text-white transition"
+          >
+            다시 시도
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // 실제 게시글 데이터 또는 임시 데이터 사용
+  const displayPost = post || mockPost
+  // 실제 댓글 데이터 또는 임시 데이터 사용
+  const displayComments = comments && comments.length > 0 ? comments : mockComments
+
   return (
     <div className="min-h-screen bg-black text-white py-12 px-4">
       <div className="max-w-4xl mx-auto">
@@ -64,36 +176,38 @@ const PostDetail = () => {
         {/* 게시글 내용 */}
         <div className="bg-white text-black rounded-lg p-8 mb-8">
           {/* 제목 */}
-          <h1 className="text-2xl font-bold text-[#B8DCCC] mb-4">{mockPost.title}</h1>
+          <h1 className="text-2xl font-bold text-[#B8DCCC] mb-4">{displayPost.title}</h1>
           
           {/* 메타 정보 */}
           <div className="flex items-center justify-between text-sm text-gray-600 mb-6 pb-4 border-b">
             <div className="flex items-center space-x-4">
-              <span>작성자: {mockPost.writer}</span>
-              <span>조회수: {mockPost.views}</span>
-              <span>💬 {mockPost.comments} 댓글</span>
+              <span>작성자: {'userNickname' in displayPost ? displayPost.userNickname : (displayPost as any).writer}</span>
+              <span>조회수: {'views' in displayPost ? (displayPost as any).views : 0}</span>
+              <span>💬 {displayComments.length} 댓글</span>
             </div>
             <div>
-              <span>작성일: {mockPost.createdAt}</span>
+              <span>작성일: {displayPost.createdAt}</span>
             </div>
           </div>
 
           {/* 본문 */}
           <div className="text-gray-800 leading-relaxed whitespace-pre-line">
-            {mockPost.content}
+            {displayPost.content}
           </div>
         </div>
 
         {/* 댓글 섹션 */}
         <div className="bg-white text-black rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-[#B8DCCC] mb-4">댓글 ({mockComments.length})</h3>
+          <h3 className="text-lg font-semibold text-[#B8DCCC] mb-4">댓글 ({displayComments.length})</h3>
           
           {/* 댓글 목록 */}
           <div className="space-y-4 mb-6">
-            {mockComments.map((comment) => (
+            {displayComments.map((comment) => (
               <div key={comment.id} className="border-b border-gray-200 pb-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-[#B8DCCC]">{comment.writer}</span>
+                  <span className="font-medium text-[#B8DCCC]">
+                    {'userNickname' in comment ? comment.userNickname : (comment as any).writer}
+                  </span>
                   <span className="text-sm text-gray-500">{comment.createdAt}</span>
                 </div>
                 <p className="text-gray-700">{comment.content}</p>
@@ -104,13 +218,20 @@ const PostDetail = () => {
           {/* 댓글 작성 */}
           <div className="border-t pt-4">
             <textarea 
+              value={commentContent}
+              onChange={(e) => setCommentContent(e.target.value)}
               placeholder="댓글을 입력하세요..."
               className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:border-[#B8DCCC]"
               rows={3}
+              disabled={submittingComment}
             />
             <div className="flex justify-end mt-2">
-              <button className="bg-[#B8DCCC] text-black font-semibold px-4 py-2 rounded hover:bg-opacity-90">
-                댓글 작성
+              <button 
+                onClick={handleSubmitComment}
+                disabled={!commentContent.trim() || submittingComment}
+                className="bg-[#B8DCCC] text-black font-semibold px-4 py-2 rounded hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submittingComment ? '작성 중...' : '댓글 작성'}
               </button>
             </div>
           </div>

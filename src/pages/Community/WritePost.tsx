@@ -1,25 +1,33 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import '../Home/Home.css'
+import { postsApi, CATEGORIES, CATEGORY_NAMES } from '../../api/posts'
 
 const WritePost = () => {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
+  
+  // 로그인 상태 확인
+  useEffect(() => {
+    const accessToken = localStorage.getItem('accessToken')
+    if (!accessToken) {
+      alert('로그인이 필요합니다.')
+      navigate('/login')
+    }
+  }, [navigate])
   const [formData, setFormData] = useState({
     title: '',
     content: '',
-    category: 'general'
+    categoryId: CATEGORIES.GENERAL
   })
 
   const categories = [
-    { value: 'general', label: '일반' },
-    { value: 'question', label: '질문' },
-    { value: 'review', label: '후기' },
-    { value: 'info', label: '정보공유' },
-    { value: 'study', label: '스터디' }
+    { value: CATEGORIES.GENERAL, label: CATEGORY_NAMES[CATEGORIES.GENERAL] },
+    { value: CATEGORIES.NOTICE, label: CATEGORY_NAMES[CATEGORIES.NOTICE] },
+    { value: CATEGORIES.QNA, label: CATEGORY_NAMES[CATEGORIES.QNA] }
   ]
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | number) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -37,16 +45,67 @@ const WritePost = () => {
     setLoading(true)
     
     try {
-      // TODO: 실제 백엔드 API 호출
-      console.log('게시글 작성 데이터:', formData)
+      // 토큰 확인
+      const accessToken = localStorage.getItem('accessToken')
+      const tokenType = localStorage.getItem('tokenType')
+      const expiresIn = localStorage.getItem('expiresIn')
+      const user = localStorage.getItem('user')
       
-      // 임시로 성공 처리
+      console.log('현재 accessToken:', accessToken)
+      console.log('현재 tokenType:', tokenType)
+      console.log('토큰 만료 시간:', expiresIn)
+      console.log('현재 시간:', Date.now())
+      console.log('사용자 정보:', user)
+      
+      if (!accessToken) {
+        alert('로그인이 필요합니다. 로그인 후 다시 시도해주세요.')
+        navigate('/login')
+        return
+      }
+      
+      // 토큰 만료 확인
+      if (expiresIn && Date.now() > parseInt(expiresIn)) {
+        alert('토큰이 만료되었습니다. 다시 로그인해주세요.')
+        navigate('/login')
+        return
+      }
+      
+      // 실제 로그인된 사용자 정보 가져오기
+      let userId = 1 // 기본값
+      if (user) {
+        try {
+          const userInfo = JSON.parse(user)
+          userId = userInfo.userId
+          console.log('실제 사용자 ID:', userId)
+        } catch (error) {
+          console.error('사용자 정보 파싱 오류:', error)
+        }
+      }
+      
+      // 실제 백엔드 API 호출
+      const postData = {
+        title: formData.title,
+        content: formData.content,
+        categoryId: formData.categoryId,
+        userId: userId
+      }
+      
+      console.log('전송할 데이터:', postData)
+      const postId = await postsApi.createPost(postData)
+      console.log('게시글 작성 성공, ID:', postId)
+      
       alert('게시글이 성공적으로 작성되었습니다!')
       navigate('/community')
       
     } catch (error) {
       console.error('게시글 작성 오류:', error)
-      alert('게시글 작성 중 오류가 발생했습니다.')
+      
+      if (error instanceof Error && error.message.includes('403')) {
+        alert('권한이 부족합니다. 로그인 상태를 확인해주세요.')
+        navigate('/login')
+      } else {
+        alert('게시글 작성 중 오류가 발생했습니다.')
+      }
     } finally {
       setLoading(false)
     }
@@ -84,8 +143,8 @@ const WritePost = () => {
               카테고리
             </label>
             <select
-              value={formData.category}
-              onChange={(e) => handleInputChange('category', e.target.value)}
+              value={formData.categoryId}
+              onChange={(e) => handleInputChange('categoryId', parseInt(e.target.value))}
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#B8DCCC]"
             >
               {categories.map(category => (
