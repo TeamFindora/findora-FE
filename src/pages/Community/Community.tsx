@@ -8,8 +8,8 @@ const Community = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-black text-white py-12 px-4">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-white text-white">
+      <div className="text-center py-20 bg-zinc-100">
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-3xl font-bold text-[#B8DCCC] mb-2">커뮤니티</h1>

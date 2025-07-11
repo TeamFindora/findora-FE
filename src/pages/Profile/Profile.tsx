@@ -5,6 +5,7 @@ import './Profile.css'
 
 const Profile = () => {
   const navigate = useNavigate()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)

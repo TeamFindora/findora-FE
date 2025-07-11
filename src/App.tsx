@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
-import { Home, Login, SignUp, Profile, Admission, Research, Community } from './pages'
+import { Home, Login, SignUp, Profile, Admission, Research, Community, ResearchDetail } from './pages'
 import { Header, Footer } from './components'
 import ProtectedRoute from './components/ProtectedRoute'
 import './App.css'
@@ -56,6 +56,16 @@ function App() {
         element={
           <Layout>
             <Research />
+          </Layout>
+        } 
+      />
+
+      {/* 연구실/교수평가 - 디테일 화면 */}
+      <Route 
+        path="/research/detail" 
+        element={
+          <Layout>
+            <ResearchDetail />
           </Layout>
         } 
       />
