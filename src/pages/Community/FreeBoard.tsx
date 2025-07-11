@@ -235,70 +235,73 @@ const FreeBoard = () => {
 
         {/* 검색 및 필터링 */}
         {!loading && !error && (
-        <div className="bg-white rounded-lg p-6 mb-6">
-          <form onSubmit={handleSearch} className="space-y-4">
-            {/* 검색바 */}
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  placeholder="제목, 작성자로 검색..."
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#B8DCCC] text-black"
-                />
-              </div>
-              <button
-                type="submit"
-                className="px-6 py-3 bg-[#B8DCCC] text-black font-semibold rounded-lg hover:bg-opacity-90 transition"
-              >
-                🔍 검색
-              </button>
-            </div>
-
-            {/* 정렬 옵션 */}
-            <div className="flex items-center justify-between">
-              <div></div> {/* 왼쪽 공간 */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-700 text-black">정렬:</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => handleSortChange(e.target.value)}
-                  className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#B8DCCC] text-black"
-                >
-                  {sortOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* 초기화 버튼 */}
-            {(searchTerm || sortBy !== 'latest') && (
-              <div className="flex justify-end">
+          <div className="bg-white rounded-lg p-6 mb-6">
+            <form onSubmit={handleSearch} className="space-y-4">
+              {/* 검색바 */}
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    placeholder="제목, 작성자로 검색..."
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#B8DCCC] text-black"
+                  />
+                </div>
                 <button
-                  type="button"
-                  onClick={clearSearch}
-                  className="text-sm text-gray-500 hover:text-gray-700 transition"
+                  type="submit"
+                  className="px-6 py-3 bg-[#B8DCCC] text-black font-semibold rounded-lg hover:bg-opacity-90 transition"
                 >
-                  초기화
+                  🔍 검색
                 </button>
               </div>
-            )}
-          </form>
-        </div>
+
+              {/* 정렬 옵션 */}
+              <div className="flex items-center justify-between">
+                <div></div> {/* 왼쪽 공간 */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700 text-black">정렬:</span>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => handleSortChange(e.target.value)}
+                    className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#B8DCCC] text-black"
+                  >
+                    {sortOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* 초기화 버튼 */}
+              {(searchTerm || sortBy !== 'latest') && (
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={clearSearch}
+                    className="text-sm text-gray-500 hover:text-gray-700 transition"
+                  >
+                    초기화
+                  </button>
+                </div>
+              )}
+            </form>
+          </div>
+        )}
 
         {/* 글쓰기 버튼 */}
-        <div className="text-right mb-6">
-          <button 
-            onClick={() => navigate('/community/write')}
-            className="bg-[#B8DCCC] text-black font-semibold px-4 py-2 rounded hover:bg-opacity-90 transition"
-          >
-            ✍ 글쓰기
-          </button>
-        </div>
+        {!loading && !error && (
+          <div className="text-right mb-6">
+            <button 
+              onClick={() => navigate('/community/write')}
+              className="bg-[#B8DCCC] text-black font-semibold px-4 py-2 rounded hover:bg-opacity-90 transition"
+            >
+              ✍ 글쓰기
+            </button>
+          </div>
+        )}
 
         {/* 검색 결과 표시 */}
         {!loading && !error && (

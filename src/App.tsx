@@ -4,6 +4,7 @@ import { Header, Footer } from './components'
 import ProtectedRoute from './components/ProtectedRoute'
 import PostDetail from './pages/Community/PostDetail'
 import WritePost from './pages/Community/WritePost'
+import EditPost from './pages/Community/EditPost'
 import FreeBoard from './pages/Community/FreeBoard'
 import BestBoard from './pages/Community/BestBoard'
 import Verify from './pages/Admission/verify'
@@ -82,6 +83,18 @@ function App() {
           <ProtectedRoute>
             <Layout>
               <WritePost />
+            </Layout>
+          </ProtectedRoute>
+        } 
+      />
+
+      {/* 커뮤니티 게시글 수정 */}
+      <Route 
+        path="/community/edit/:id" 
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <EditPost />
             </Layout>
           </ProtectedRoute>
         } 
