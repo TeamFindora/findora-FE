@@ -122,34 +122,58 @@ const Login = () => {
     try {
       setLoading(true)
       
-      // 백엔드 API 호출 (임시로 콘솔에 출력)
-      console.log('백엔드로 전송할 데이터:', {
-        kakaoId: userInfo.id,
-        email: userInfo.kakao_account?.email,
-        nickname: userInfo.properties?.nickname,
-        accessToken: accessToken
-      })
+      // 페이로드 구성
+      const payload = {
+        kakaoId: userInfo.id ? userInfo.id.toString() : '',
+        email: userInfo.kakao_account?.email || '',
+        nickname: userInfo.properties?.nickname || '',
+        accessToken: accessToken || ''
+      };
 
-      // TODO: 실제 백엔드 API 호출
-      // const response = await fetch('/api/auth/kakao', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify({
-      //     kakaoId: userInfo.id,
-      //     email: userInfo.kakao_account?.email,
-      //     nickname: userInfo.properties?.nickname,
-      //     accessToken: accessToken
-      //   })
-      // })
+      console.log('백엔드로 전송할 데이터:', payload);
 
-      // 임시로 성공 처리
-      alert('카카오 로그인 성공! (백엔드 연동 필요)')
+      const response = await fetch('http://localhost:8080/api/auth/kakao', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        const loginResponse = await response.json();
+        console.log('백엔드 로그인 성공:', loginResponse);
+        
+        // 토큰 만료 시간 계산
+        const expirationTime = Date.now() + (loginResponse.expiresIn || 3600000); // 기본 1시간
+        
+        // 로컬 스토리지에 토큰과 사용자 정보 저장
+        localStorage.setItem('accessToken', loginResponse.accessToken);
+        localStorage.setItem('refreshToken', loginResponse.refreshToken || '');
+        localStorage.setItem('tokenType', loginResponse.tokenType || 'Bearer');
+        localStorage.setItem('expiresIn', expirationTime.toString());
+        localStorage.setItem('user', JSON.stringify(loginResponse.user));
+        
+        // 로그인 성공 후 상태 업데이트를 위한 커스텀 이벤트 발생
+        window.dispatchEvent(new Event('auth-change'));
+        
+        alert(`${loginResponse.user?.nickname || '사용자'}님, 카카오 로그인 성공!`);
+        navigate('/'); // 홈페이지로 이동
+      } else {
+        const errorData = await response.json();
+        console.error('백엔드 로그인 실패:', errorData);
+        alert(errorData.message || '로그인에 실패했습니다.');
+      }
       
     } catch (error) {
-      console.error('카카오 인증 오류:', error)
-      alert('카카오 로그인 중 오류가 발생했습니다.')
+      console.error('카카오 인증 오류:', error);
+      
+      // CORS 에러인지 확인
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        alert('백엔드 서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.');
+      } else {
+        alert('카카오 로그인 중 오류가 발생했습니다.');
+      }
     } finally {
       setLoading(false)
     }
