@@ -216,41 +216,44 @@ const Community = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white py-12 px-4">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8 px-4">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-3xl font-bold text-[#B8DCCC] mb-2">커뮤니티</h1>
-          <p className="text-gray-300 text-sm">
+        <div className="text-center mb-10">
+          <h1 className="text-4xl font-bold text-slate-800 mb-3">커뮤니티</h1>
+          <p className="text-slate-600 text-lg">
             질문하고 나누는 자유로운 공간입니다.
           </p>
         </div>
 
         {/* 로딩 상태 */}
         {loading && (
-          <div className="text-center py-12">
-            <div className="text-gray-500 text-lg">게시글을 불러오는 중...</div>
-            <div className="text-gray-400 text-sm mt-2">posts: {posts?.length || 0}개, loading: {loading.toString()}</div>
+          <div className="text-center py-16">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+            <div className="text-slate-700 text-lg font-medium">게시글을 불러오는 중...</div>
+            <div className="text-slate-500 text-sm mt-2">posts: {posts?.length || 0}개</div>
           </div>
         )}
 
         {/* 에러 상태 */}
         {error && (
-          <div className="text-center py-12">
-            <div className="text-red-500 text-lg mb-2">{error}</div>
-            <button
-              onClick={() => window.location.reload()}
-              className="text-[#B8DCCC] hover:text-white transition"
-            >
-              다시 시도
-            </button>
+          <div className="text-center py-16">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6 inline-block">
+              <div className="text-red-700 text-lg font-medium mb-3">{error}</div>
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
+              >
+                다시 시도
+              </button>
+            </div>
           </div>
         )}
 
         {/* 검색 및 필터링 */}
         {!loading && !error && (
-          <div className="bg-white rounded-lg p-6 mb-6">
-          <form onSubmit={handleSearch} className="space-y-4">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+          <form onSubmit={handleSearch} className="space-y-6">
             {/* 검색바 */}
             <div className="flex gap-4">
               <div className="flex-1">
@@ -259,12 +262,12 @@ const Community = () => {
                   value={searchTerm}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   placeholder="제목, 작성자로 검색..."
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#B8DCCC] text-black"
+                  className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-800 text-lg"
                 />
               </div>
               <button
                 type="submit"
-                className="px-6 py-3 bg-[#B8DCCC] text-black font-semibold rounded-lg hover:bg-opacity-90 transition"
+                className="px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
               >
                 🔍 검색
               </button>
@@ -273,12 +276,12 @@ const Community = () => {
             {/* 정렬 옵션 */}
             <div className="flex items-center justify-between">
               <div></div> {/* 왼쪽 공간 */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-700 text-black">정렬:</span>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-slate-700">정렬:</span>
                 <select
                   value={sortBy}
                   onChange={(e) => handleSortChange(e.target.value)}
-                  className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#B8DCCC] text-black"
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700"
                 >
                   {sortOptions.map(option => (
                     <option key={option.value} value={option.value}>
@@ -295,7 +298,7 @@ const Community = () => {
                 <button
                   type="button"
                   onClick={clearSearch}
-                  className="text-sm text-gray-500 hover:text-gray-700 transition"
+                  className="text-sm text-slate-500 hover:text-slate-700 transition-colors"
                 >
                   초기화
                 </button>
@@ -307,10 +310,10 @@ const Community = () => {
 
         {/* 글쓰기 버튼 */}
         {!loading && !error && (
-          <div className="text-right mb-6">
+          <div className="text-right mb-8">
             <button 
               onClick={() => navigate('/community/write')}
-              className="bg-[#B8DCCC] text-black font-semibold px-4 py-2 rounded hover:bg-opacity-90 transition"
+              className="bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
             >
               ✍ 글쓰기
             </button>
@@ -320,17 +323,19 @@ const Community = () => {
         {/* 검색 결과 표시 */}
         {!loading && !error && filteredAndSortedPosts && (
           filteredAndSortedPosts.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-gray-500 text-lg mb-2">검색 결과가 없습니다</div>
-              <button
-                onClick={clearSearch}
-                className="text-[#B8DCCC] hover:text-white transition"
-              >
-                검색 조건 초기화
-              </button>
+            <div className="text-center py-16">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 inline-block">
+                <div className="text-slate-600 text-lg mb-3">검색 결과가 없습니다</div>
+                <button
+                  onClick={clearSearch}
+                  className="text-blue-600 hover:text-blue-700 transition-colors font-medium"
+                >
+                  검색 조건 초기화
+                </button>
+              </div>
             </div>
           ) : (
-            <div className="mb-4 text-sm text-gray-300">
+            <div className="mb-6 text-sm text-slate-600 bg-white rounded-lg p-3 border border-gray-200">
               총 {filteredAndSortedPosts.length}개의 게시글 (페이지 {currentPage}/{totalPages})
             </div>
           )
@@ -339,18 +344,21 @@ const Community = () => {
         {/* 상단 실시간 인기 게시글 */}
         {!loading && !error && (
           <div className="mb-12">
-            <h2 className="text-xl font-bold text-[#B8DCCC] mb-4">실시간 인기게시글</h2>
+            <h2 className="text-2xl font-bold text-slate-800 mb-6">🔥 실시간 인기게시글</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {popularPosts.map(post => (
                 <div
                   key={post.id}
-                  className="bg-white text-black rounded-lg px-6 py-4 shadow hover:-translate-y-1 transition cursor-pointer hover:shadow-lg"
+                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer"
                   onClick={() => navigate(`/community/post/${post.id}`)}
                 >
-                  <h3 className="text-lg font-semibold text-[#B8DCCC] mb-2">{post.title}</h3>
-                  <div className="text-sm text-gray-600 mb-1">작성자: {'userNickname' in post ? post.userNickname : (post as any).writer}</div>
-                  <div className="text-xs text-gray-500 mb-1">{post.createdAt}</div>
-                  <div className="text-xs text-gray-700">조회수: {'views' in post ? (post as any).views : 0} · 댓글: {'comments' in post ? (post as any).comments : 0}</div>
+                  <h3 className="text-lg font-semibold text-slate-800 mb-3 line-clamp-2">{post.title}</h3>
+                  <div className="text-sm text-slate-600 mb-2">👤 {'userNickname' in post ? post.userNickname : (post as any).writer}</div>
+                  <div className="text-xs text-slate-500 mb-2">📅 {post.createdAt}</div>
+                  <div className="text-xs text-slate-600 flex items-center gap-3">
+                    <span>👀 {'views' in post ? (post as any).views : 0}</span>
+                    <span>💬 {'comments' in post ? (post as any).comments : 0}</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -359,26 +367,26 @@ const Community = () => {
 
         {/* 게시판 탭 */}
         {!loading && !error && (
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex gap-2">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex gap-3">
               <button
-                className={`px-4 py-2 rounded font-semibold transition ${activeTab === 'free' ? 'bg-[#B8DCCC] text-black' : 'bg-gray-600 text-white hover:bg-gray-500'}`}
+                className={`px-6 py-3 rounded-lg font-semibold transition-colors ${activeTab === 'free' ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-slate-700 hover:bg-gray-200'}`}
                 onClick={() => setActiveTab('free')}
               >
-                자유 게시판
+                📝 자유 게시판
               </button>
               <button
-                className={`px-4 py-2 rounded font-semibold transition ${activeTab === 'best' ? 'bg-[#B8DCCC] text-black' : 'bg-gray-600 text-white hover:bg-gray-500'}`}
+                className={`px-6 py-3 rounded-lg font-semibold transition-colors ${activeTab === 'best' ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-slate-700 hover:bg-gray-200'}`}
                 onClick={() => setActiveTab('best')}
               >
-                베스트 게시판
+                ⭐ 베스트 게시판
               </button>
             </div>
             <button
               onClick={() => navigate(`/community/${activeTab}`)}
-              className="px-4 py-2 bg-[#B8DCCC] text-black font-semibold rounded hover:bg-opacity-90 transition"
+              className="px-6 py-3 bg-slate-600 text-white font-semibold rounded-lg hover:bg-slate-700 transition-colors shadow-sm"
             >
-              더보기
+              더보기 →
             </button>
           </div>
         )}
@@ -389,19 +397,19 @@ const Community = () => {
             {(activeTab === 'free' ? currentPosts : bestBoardPosts.slice(0, 5)).map(post => (
               <div
                 key={post.id}
-                className="bg-white text-black rounded-lg px-6 py-4 shadow hover:-translate-y-1 transition cursor-pointer hover:shadow-lg"
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer"
                 onClick={() => navigate(`/community/post/${post.id}`)}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-[#B8DCCC]">{post.title}</h3>
-                    <div className="text-sm text-gray-600 mt-1">
-                      작성자: {'userNickname' in post ? post.userNickname : (post as any).writer} · 
-                      💬 {'comments' in post ? (post as any).comments : 0} 댓글 · 
-                      👁️ {'views' in post ? (post as any).views : 0} 조회
+                    <h3 className="text-xl font-semibold text-slate-800 mb-3 line-clamp-2">{post.title}</h3>
+                    <div className="text-sm text-slate-600 mb-2 flex items-center gap-4">
+                      <span>👤 {'userNickname' in post ? post.userNickname : (post as any).writer}</span>
+                      <span>💬 {'comments' in post ? (post as any).comments : 0}</span>
+                      <span>👀 {'views' in post ? (post as any).views : 0}</span>
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {post.createdAt}
+                    <div className="text-xs text-slate-500">
+                      📅 {post.createdAt}
                     </div>
                   </div>
                 </div>

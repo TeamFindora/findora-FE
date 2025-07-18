@@ -2,7 +2,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import '../Home/Home.css'
 import { postsApi } from '../../api/posts'
-import type { PostResponseDto, PostRequestDto } from '../../api/posts'
+import type { PostResponseDto, PostUpdateDto } from '../../api/posts'
+import { getCurrentUser, isAuthenticated } from '../../api/auth'
 
 const EditPost = () => {
   const { id } = useParams()
@@ -16,7 +17,7 @@ const EditPost = () => {
   const [post, setPost] = useState<PostResponseDto | null>(null)
 
   // 현재 로그인한 사용자 정보
-  const currentUserId = Number(localStorage.getItem('userId')) || 0
+  const currentUser = getCurrentUser()
 
   // 게시글 데이터 로드
   useEffect(() => {
@@ -45,10 +46,10 @@ const EditPost = () => {
     loadPost()
   }, [id])
 
-  // 작성자 권한 확인
+  // 작성자 권한 확인 (JWT 기반)
   const isAuthor = () => {
-    if (!post) return false
-    return post.userId === currentUserId
+    if (!post || !currentUser) return false
+    return post.userNickname === currentUser.nickname
   }
 
   // 폼 제출 처리
@@ -63,11 +64,9 @@ const EditPost = () => {
     try {
       setSubmitting(true)
       
-      const postData: PostRequestDto = {
+      const postData: PostUpdateDto = {
         title: title.trim(),
-        content: content.trim(),
-        categoryId: categoryId,
-        userId: currentUserId
+        content: content.trim()
       }
 
       await postsApi.updatePost(Number(id), postData)
@@ -134,101 +133,83 @@ const EditPost = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* 헤더 */}
-        <div className="text-center mb-12">
-          <h1 className="text-3xl font-bold text-[#B8DCCC] mb-2">게시글 수정</h1>
-          <p className="text-gray-300 text-sm">
+        <div className="text-center mb-10">
+          <h1 className="text-3xl font-bold text-slate-800 mb-3">✏️ 게시글 수정</h1>
+          <p className="text-slate-600 text-lg">
             게시글을 수정할 수 있습니다.
           </p>
         </div>
 
         {/* 뒤로가기 버튼 */}
-        <div className="mb-6">
+        <div className="mb-8">
           <button 
             onClick={() => navigate(`/community/post/${id}`)}
-            className="text-[#B8DCCC] hover:text-white transition flex items-center"
+            className="text-slate-600 hover:text-slate-800 transition-colors flex items-center font-medium"
           >
             ← 게시글로 돌아가기
           </button>
         </div>
 
         {/* 수정 폼 */}
-        <div className="bg-white text-black rounded-lg p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* 카테고리 선택 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                카테고리
-              </label>
-              <select
-                value={categoryId}
-                onChange={(e) => setCategoryId(Number(e.target.value))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#B8DCCC]"
-                required
-              >
-                {categories.map(category => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+          <form onSubmit={handleSubmit} className="space-y-8">
 
             {/* 제목 입력 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                제목
+              <label className="block text-sm font-medium text-slate-700 mb-3">
+                📝 제목
               </label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="제목을 입력하세요"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#B8DCCC]"
+                className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-800 text-lg"
                 required
                 maxLength={100}
               />
-              <div className="text-sm text-gray-500 mt-1">
+              <div className="text-sm text-slate-500 mt-2">
                 {title.length}/100
               </div>
             </div>
 
             {/* 내용 입력 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                내용
+              <label className="block text-sm font-medium text-slate-700 mb-3">
+                📄 내용
               </label>
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="내용을 입력하세요"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#B8DCCC] resize-none"
+                className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-800 text-lg leading-relaxed resize-none"
                 rows={15}
                 required
                 maxLength={5000}
               />
-              <div className="text-sm text-gray-500 mt-1">
+              <div className="text-sm text-slate-500 mt-2">
                 {content.length}/5000
               </div>
             </div>
 
             {/* 버튼 그룹 */}
-            <div className="flex justify-end space-x-4 pt-6">
+            <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
               <button
                 type="button"
                 onClick={() => navigate(`/community/post/${id}`)}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+                className="px-6 py-3 border border-gray-300 text-slate-700 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 취소
               </button>
               <button
                 type="submit"
                 disabled={!title.trim() || !content.trim() || submitting}
-                className="px-6 py-3 bg-[#B8DCCC] text-black font-semibold rounded-lg hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
               >
-                {submitting ? '수정 중...' : '수정하기'}
+                {submitting ? '수정 중...' : '✏️ 수정하기'}
               </button>
             </div>
           </form>

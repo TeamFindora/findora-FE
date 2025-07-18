@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import '../Home/Home.css'
 import { postsApi, CATEGORIES, CATEGORY_NAMES } from '../../api/posts'
+import { getCurrentUser, isAuthenticated } from '../../api/auth'
 
 const WritePost = () => {
   const navigate = useNavigate()
@@ -9,8 +10,7 @@ const WritePost = () => {
   
   // 로그인 상태 확인
   useEffect(() => {
-    const accessToken = localStorage.getItem('accessToken')
-    if (!accessToken) {
+    if (!isAuthenticated()) {
       alert('로그인이 필요합니다.')
       navigate('/login')
     }
@@ -45,49 +45,24 @@ const WritePost = () => {
     setLoading(true)
     
     try {
-      // 토큰 확인
-      const accessToken = localStorage.getItem('accessToken')
-      const tokenType = localStorage.getItem('tokenType')
-      const expiresIn = localStorage.getItem('expiresIn')
-      const user = localStorage.getItem('user')
+      // JWT 기반 사용자 정보 확인
+      const currentUser = getCurrentUser()
       
-      console.log('현재 accessToken:', accessToken)
-      console.log('현재 tokenType:', tokenType)
-      console.log('토큰 만료 시간:', expiresIn)
-      console.log('현재 시간:', Date.now())
-      console.log('사용자 정보:', user)
-      
-      if (!accessToken) {
+      if (!currentUser || !isAuthenticated()) {
         alert('로그인이 필요합니다. 로그인 후 다시 시도해주세요.')
         navigate('/login')
         return
       }
       
-      // 토큰 만료 확인
-      if (expiresIn && Date.now() > parseInt(expiresIn)) {
-        alert('토큰이 만료되었습니다. 다시 로그인해주세요.')
-        navigate('/login')
-        return
-      }
-      
-      // 실제 로그인된 사용자 정보 가져오기
-      let userId = 1 // 기본값
-      if (user) {
-        try {
-          const userInfo = JSON.parse(user)
-          userId = userInfo.userId
-          console.log('실제 사용자 ID:', userId)
-        } catch (error) {
-          console.error('사용자 정보 파싱 오류:', error)
-        }
-      }
+      console.log('현재 사용자 정보:', currentUser)
+      console.log('실제 사용자 ID:', currentUser.userId)
       
       // 실제 백엔드 API 호출
       const postData = {
         title: formData.title,
         content: formData.content,
         categoryId: formData.categoryId,
-        userId: userId
+        userId: currentUser.userId
       }
       
       console.log('전송할 데이터:', postData)
@@ -122,30 +97,30 @@ const WritePost = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* 헤더 */}
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-[#B8DCCC]">글쓰기</h1>
+          <h1 className="text-3xl font-bold text-slate-800">✍️ 글쓰기</h1>
           <button 
             onClick={handleCancel}
-            className="text-gray-400 hover:text-white transition"
+            className="text-slate-500 hover:text-slate-700 transition-colors"
           >
             ✕ 취소
           </button>
         </div>
 
         {/* 글쓰기 폼 */}
-        <form onSubmit={handleSubmit} className="bg-white text-black rounded-lg p-8">
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
           {/* 카테고리 선택 */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              카테고리
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-slate-700 mb-3">
+              📂 카테고리
             </label>
             <select
               value={formData.categoryId}
               onChange={(e) => handleInputChange('categoryId', parseInt(e.target.value))}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#B8DCCC]"
+              className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-800"
             >
               {categories.map(category => (
                 <option key={category.value} value={category.value}>
@@ -156,55 +131,55 @@ const WritePost = () => {
           </div>
 
           {/* 제목 입력 */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              제목
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-slate-700 mb-3">
+              📝 제목
             </label>
             <input
               type="text"
               value={formData.title}
               onChange={(e) => handleInputChange('title', e.target.value)}
               placeholder="제목을 입력하세요"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#B8DCCC]"
+              className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-800 text-lg"
               maxLength={100}
             />
-            <div className="text-right text-sm text-gray-500 mt-1">
+            <div className="text-right text-sm text-slate-500 mt-2">
               {formData.title.length}/100
             </div>
           </div>
 
           {/* 내용 입력 */}
           <div className="mb-8">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              내용
+            <label className="block text-sm font-medium text-slate-700 mb-3">
+              📄 내용
             </label>
             <textarea
               value={formData.content}
               onChange={(e) => handleInputChange('content', e.target.value)}
               placeholder="내용을 입력하세요"
               rows={15}
-              className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:border-[#B8DCCC]"
+              className="w-full p-4 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-800 text-lg leading-relaxed"
             />
-            <div className="text-right text-sm text-gray-500 mt-1">
+            <div className="text-right text-sm text-slate-500 mt-2">
               {formData.content.length}자
             </div>
           </div>
 
           {/* 버튼 */}
-          <div className="flex justify-end space-x-4">
+          <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
             <button
               type="button"
               onClick={handleCancel}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+              className="px-6 py-3 border border-gray-300 text-slate-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
               취소
             </button>
             <button
               type="submit"
               disabled={loading || !formData.title.trim() || !formData.content.trim()}
-              className="px-6 py-2 bg-[#B8DCCC] text-black font-semibold rounded-lg hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
             >
-              {loading ? '작성 중...' : '작성하기'}
+              {loading ? '작성 중...' : '✍️ 작성하기'}
             </button>
           </div>
         </form>

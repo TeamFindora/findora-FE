@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getCurrentUser, getUserProfile, updateUserProfile } from '../../api'
+import { getCurrentUser, getUserProfile, updateNickname } from '../../api'
 import './Profile.css'
 
 const Profile = () => {
@@ -9,8 +9,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [formData, setFormData] = useState({
-    nickname: '',
-    email: ''
+    nickname: ''
   })
 
   useEffect(() => {
@@ -24,8 +23,7 @@ const Profile = () => {
       if (localUser) {
         setUser(localUser)
         setFormData({
-          nickname: localUser.nickname,
-          email: localUser.email
+          nickname: localUser.nickname
         })
       }
 
@@ -34,8 +32,7 @@ const Profile = () => {
       if (result.success) {
         setUser(result.data)
         setFormData({
-          nickname: result.data.nickname,
-          email: result.data.email
+          nickname: result.data.nickname
         })
       }
     } catch (error) {
@@ -55,14 +52,14 @@ const Profile = () => {
   const handleSave = async () => {
     try {
       setLoading(true)
-      const result = await updateUserProfile(formData)
+      const result = await updateNickname(formData.nickname)
       
       if (result.success) {
-        alert('프로필이 성공적으로 수정되었습니다.')
+        alert('닉네임이 성공적으로 수정되었습니다.')
         setEditing(false)
         
         // 로컬 사용자 정보 업데이트
-        const updatedUser = { ...user, ...formData }
+        const updatedUser = { ...user, nickname: formData.nickname }
         localStorage.setItem('user', JSON.stringify(updatedUser))
         setUser(updatedUser)
         
@@ -72,7 +69,7 @@ const Profile = () => {
         alert(result.message)
       }
     } catch (error) {
-      alert('프로필 수정 중 오류가 발생했습니다.')
+      alert('닉네임 수정 중 오류가 발생했습니다.')
     } finally {
       setLoading(false)
     }
@@ -80,8 +77,7 @@ const Profile = () => {
 
   const handleCancel = () => {
     setFormData({
-      nickname: user?.nickname || '',
-      email: user?.email || ''
+      nickname: user?.nickname || ''
     })
     setEditing(false)
   }
@@ -143,16 +139,7 @@ const Profile = () => {
             
             <div className="info-item">
               <label>이메일</label>
-              {editing ? (
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  className="edit-input"
-                />
-              ) : (
-                <span>{user.email}</span>
-              )}
+              <span>{user.email}</span>
             </div>
             
             <div className="info-item">

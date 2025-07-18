@@ -131,20 +131,34 @@ export interface PostRequestDto {
   userId: number
 }
 
-// 댓글 타입 정의
+// 게시글 수정용 타입 (제목과 내용만 수정 가능)
+export interface PostUpdateDto {
+  title: string
+  content: string
+}
+
+// 댓글 타입 정의 (백엔드 API에 맞춰서 수정)
 export interface CommentResponseDto {
   id: number
   postId: number
   userId: number
-  userNickname: string
+  userNickname?: string // 옵셔널로 변경
+  nickname?: string // 가능한 다른 필드명
+  author?: string // 가능한 다른 필드명
+  writer?: string // 가능한 다른 필드명
   content: string
   createdAt: string
   updatedAt: string
+  parentId?: number // 대댓글을 위한 부모 댓글 ID
+  [key: string]: any // 다른 필드들도 허용
 }
 
 export interface CommentRequestDto {
-  postId: number
-  userId: number
+  content: string
+  parentId?: number // 대댓글을 위한 부모 댓글 ID (선택사항)
+}
+
+export interface CommentUpdateRequestDto {
   content: string
 }
 
@@ -195,8 +209,9 @@ export const postsApi = {
     return response
   },
 
-  // 게시글 수정
-  updatePost: async (id: number, postData: PostRequestDto): Promise<void> => {
+  // 게시글 수정 (제목과 내용만 수정 가능)
+  updatePost: async (id: number, postData: PostUpdateDto): Promise<void> => {
+    console.log('PUT 요청 데이터:', postData)
     await apiClient.put(`/api/posts/${id}`, postData)
   },
 
@@ -206,7 +221,7 @@ export const postsApi = {
   }
 }
 
-// 댓글 API 함수들
+// 댓글 API 함수들 (백엔드 API에 맞춰서 수정)
 export const commentsApi = {
   // 게시글의 댓글 조회
   getCommentsByPostId: async (postId: number): Promise<CommentResponseDto[]> => {
@@ -222,8 +237,8 @@ export const commentsApi = {
   },
 
   // 댓글 작성
-  createComment: async (commentData: CommentRequestDto): Promise<number> => {
-    const response = await apiClient.post(`/api/posts/${commentData.postId}/comments`, commentData)
+  createComment: async (postId: number, commentData: CommentRequestDto): Promise<any> => {
+    const response = await apiClient.post(`/api/posts/${postId}/comments`, commentData)
     if (response && typeof response === 'object' && 'data' in response) {
       return response.data
     }
@@ -231,8 +246,8 @@ export const commentsApi = {
   },
 
   // 댓글 수정
-  updateComment: async (postId: number, commentId: number, content: string): Promise<void> => {
-    await apiClient.put(`/api/posts/${postId}/comments/${commentId}`, { content })
+  updateComment: async (postId: number, commentId: number, updateData: CommentUpdateRequestDto): Promise<void> => {
+    await apiClient.put(`/api/posts/${postId}/comments/${commentId}`, updateData)
   },
 
   // 댓글 삭제
