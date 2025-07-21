@@ -156,8 +156,10 @@ const Community = () => {
           }
           return 0
         case 'views':
-          // 임시 데이터용
-          if ('views' in a) {
+          // API 데이터의 viewCount 우선 사용, 없으면 임시 데이터의 views 사용
+          if ('viewCount' in a && 'viewCount' in b) {
+            return (b as any).viewCount - (a as any).viewCount
+          } else if ('views' in a && 'views' in b) {
             return (b as any).views - (a as any).views
           }
           return 0
@@ -356,7 +358,7 @@ const Community = () => {
                   <div className="text-sm text-slate-600 mb-2">👤 {'userNickname' in post ? post.userNickname : (post as any).writer}</div>
                   <div className="text-xs text-slate-500 mb-2">📅 {post.createdAt}</div>
                   <div className="text-xs text-slate-600 flex items-center gap-3">
-                    <span>👀 {'views' in post ? (post as any).views : 0}</span>
+                    <span>👀 {'viewCount' in post ? post.viewCount : ('views' in post ? (post as any).views : 0)}</span>
                     <span>💬 {'comments' in post ? (post as any).comments : 0}</span>
                   </div>
                 </div>
@@ -406,7 +408,7 @@ const Community = () => {
                     <div className="text-sm text-slate-600 mb-2 flex items-center gap-4">
                       <span>👤 {'userNickname' in post ? post.userNickname : (post as any).writer}</span>
                       <span>💬 {'comments' in post ? (post as any).comments : 0}</span>
-                      <span>👀 {'views' in post ? (post as any).views : 0}</span>
+                      <span>👀 {'viewCount' in post ? post.viewCount : ('views' in post ? (post as any).views : 0)}</span>
                     </div>
                     <div className="text-xs text-slate-500">
                       📅 {post.createdAt}

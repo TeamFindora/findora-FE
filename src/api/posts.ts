@@ -120,6 +120,7 @@ export interface PostResponseDto {
   userNickname: string
   title: string
   content: string
+  viewCount: number
   createdAt: string
   updatedAt: string
 }
@@ -156,6 +157,7 @@ export interface CommentResponseDto {
 export interface CommentRequestDto {
   content: string
   parentId?: number // 대댓글을 위한 부모 댓글 ID (선택사항)
+  userId?: number   // 사용자 ID (백엔드에서 요구할 경우)
 }
 
 export interface CommentUpdateRequestDto {
@@ -238,7 +240,17 @@ export const commentsApi = {
 
   // 댓글 작성
   createComment: async (postId: number, commentData: CommentRequestDto): Promise<any> => {
+    // 디버깅: API 호출 전 상세 정보 로깅
+    console.log('=== createComment API 호출 ===');
+    console.log('postId:', postId);
+    console.log('commentData:', commentData);
+    console.log('요청 URL:', `/api/posts/${postId}/comments`);
+    
     const response = await apiClient.post(`/api/posts/${postId}/comments`, commentData)
+    
+    console.log('createComment 응답:', response);
+    console.log('=== createComment API 완료 ===');
+    
     if (response && typeof response === 'object' && 'data' in response) {
       return response.data
     }

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import '../Home/Home.css'
 import { postsApi, commentsApi } from '../../api/posts'
 import type { PostResponseDto, CommentResponseDto, CommentRequestDto, CommentUpdateRequestDto } from '../../api/posts'
-import { getCurrentUser } from '../../api/auth'
+import { getCurrentUser, isAuthenticated } from '../../api/auth'
 
 const PostDetail = () => {
   const { id } = useParams()
@@ -141,61 +141,115 @@ const PostDetail = () => {
     return false;
   }
 
-  // 댓글 작성자인지 확인 (JWT 기반 userId 비교)
+  // 댓글 작성자인지 확인 (JWT 기반 개선된 검증)
   const isCommentAuthor = (comment: CommentResponseDto) => {
-    console.log('=== 댓글 작성자 확인 시작 ===')
-    console.log('현재 사용자 전체 정보:', currentUser)
-    console.log('댓글 객체 전체:', comment)
-    console.log('댓글 객체의 모든 키:', Object.keys(comment))
+    console.log('=== 댓글 작성자 확인 (개선된 버전) 시작 ===')
     
-    if (!currentUser) {
-      console.log('❌ 현재 사용자가 없습니다.')
+    // 1단계: JWT 토큰 유효성 확인
+    if (!isAuthenticated()) {
+      console.log('❌ JWT 토큰이 없거나 만료됨')
       return false;
     }
     
-    // userId 기반 비교 (백엔드에서 JWT 인증 후 userId로 작성자 확인)
-    const commentUserId = comment.userId;
-    const currentUserId = currentUser.userId;
+    // 2단계: 현재 사용자 정보 확인
+    if (!currentUser) {
+      console.log('❌ 현재 사용자 정보가 없습니다.')
+      return false;
+    }
     
-    console.log('userId 비교:', {
+    console.log('현재 사용자:', { userId: currentUser.userId, nickname: currentUser.nickname })
+    console.log('댓글 정보:', { userId: comment.userId, userNickname: comment.userNickname })
+    
+    // 3단계: userId 비교 (타입 안전)
+    const commentUserId = Number(comment.userId);
+    const currentUserId = Number(currentUser.userId);
+    const userIdMatch = commentUserId === currentUserId;
+    
+    // 4단계: 닉네임 비교 (추가 검증)
+    const commentNickname = comment.userNickname || getCommentAuthor(comment);
+    const nicknameMatch = commentNickname === currentUser.nickname;
+    
+    console.log('검증 결과:', {
+      userIdMatch,
+      nicknameMatch,
       commentUserId,
       currentUserId,
-      commentType: typeof commentUserId,
-      currentType: typeof currentUserId
+      commentNickname,
+      currentNickname: currentUser.nickname
     })
     
-    // 타입 안전 비교 (숫자와 문자열 모두 고려)
-    const userIdMatch = commentUserId === currentUserId || 
-                       String(commentUserId) === String(currentUserId) ||
-                       Number(commentUserId) === Number(currentUserId);
+    // 5단계: 두 조건 모두 만족해야 작성자로 인정 (보안 강화)
+    const isAuthor = userIdMatch && nicknameMatch;
     
-    console.log('userId 일치 여부:', userIdMatch)
-    console.log('최종 결과:', userIdMatch)
+    console.log('최종 결과:', isAuthor)
     console.log('=== 댓글 작성자 확인 끝 ===')
     
-    return userIdMatch;
+    return isAuthor;
   }
 
   // 댓글 작성
   const handleSubmitComment = async () => {
-    if (!commentContent.trim() || !id) return;
+    if (!commentContent.trim() || !id || !currentUser) return;
     
     try {
       setSubmittingComment(true);
+      
+      // 디버깅: 현재 사용자 정보 확인
+      console.log('=== 댓글 작성 디버깅 시작 ===');
+      console.log('현재 사용자:', currentUser);
+      console.log('게시글 ID:', id);
+      console.log('댓글 내용:', commentContent.trim());
+      
       const commentData: CommentRequestDto = {
-        content: commentContent.trim()
+        content: commentContent.trim(),
+        userId: currentUser.userId  // 사용자 ID 추가
       };
       
-      await commentsApi.createComment(Number(id), commentData);
+      console.log('전송할 댓글 데이터:', commentData);
+      
+      // 1단계: 즉시 UI 업데이트 (로컬스토리지 정보 사용)
+      const tempComment: CommentResponseDto = {
+        id: Date.now(), // 임시 ID (타임스탬프 사용)
+        postId: Number(id),
+        userId: currentUser.userId,
+        userNickname: currentUser.nickname,
+        content: commentContent.trim(),
+        createdAt: new Date().toISOString().split('T')[0], // 오늘 날짜
+        updatedAt: new Date().toISOString().split('T')[0],
+        parentId: undefined
+      };
+      
+      // 댓글 목록에 즉시 추가
+      setComments(prev => [...prev, tempComment]);
       setCommentContent('');
       
-      // 댓글 목록 새로고침
+      console.log('임시 댓글 추가됨:', tempComment);
+      
+      // 2단계: 서버에 실제 댓글 작성 요청
+      await commentsApi.createComment(Number(id), commentData);
+      
+      // 3단계: 서버에서 최신 댓글 목록 가져와서 실제 데이터로 교체
       const updatedComments = await commentsApi.getCommentsByPostId(Number(id));
       setComments(updatedComments);
       
+      console.log('서버에서 최신 댓글 목록 가져옴');
+      console.log('=== 댓글 작성 디버깅 끝 ===');
+      
     } catch (err) {
-      console.error('댓글 작성 실패:', err);
-      alert('댓글 작성에 실패했습니다.');
+      console.error('댓글 작성 실패 상세:', err);
+      console.error('에러 타입:', typeof err);
+      console.error('에러 메시지:', err instanceof Error ? err.message : String(err));
+      
+      // 에러 발생 시 댓글 목록 새로고침 (임시 댓글 제거)
+      try {
+        const updatedComments = await commentsApi.getCommentsByPostId(Number(id));
+        setComments(updatedComments);
+      } catch {
+        // 새로고침도 실패하면 임시 댓글만 제거
+        setComments(prev => prev.filter(comment => comment.id !== Date.now()));
+      }
+      
+      alert('댓글 작성에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setSubmittingComment(false);
     }
@@ -264,26 +318,60 @@ const PostDetail = () => {
 
   // 대댓글 작성 완료
   const handleSubmitReply = async (parentId: number) => {
-    if (!replyContent.trim() || !id) return;
+    if (!replyContent.trim() || !id || !currentUser) return;
     
     try {
       setSubmittingReply(true);
+      
       const replyData: CommentRequestDto = {
         content: replyContent.trim(),
+        parentId: parentId,
+        userId: currentUser.userId  // 사용자 ID 추가
+      };
+      
+      console.log('대댓글 작성 데이터:', replyData);
+      
+      // 1단계: 즉시 UI 업데이트 (로컬스토리지 정보 사용)
+      const tempReply: CommentResponseDto = {
+        id: Date.now(), // 임시 ID
+        postId: Number(id),
+        userId: currentUser.userId,
+        userNickname: currentUser.nickname,
+        content: replyContent.trim(),
+        createdAt: new Date().toISOString().split('T')[0],
+        updatedAt: new Date().toISOString().split('T')[0],
         parentId: parentId
       };
       
-      await commentsApi.createComment(Number(id), replyData);
+      // 댓글 목록에 즉시 추가
+      setComments(prev => [...prev, tempReply]);
       setReplyContent('');
       setReplyingToCommentId(null);
       
-      // 댓글 목록 새로고침
+      console.log('임시 대댓글 추가됨:', tempReply);
+      
+      // 2단계: 서버에 실제 대댓글 작성 요청
+      await commentsApi.createComment(Number(id), replyData);
+      
+      // 3단계: 서버에서 최신 댓글 목록 가져와서 실제 데이터로 교체
       const updatedComments = await commentsApi.getCommentsByPostId(Number(id));
       setComments(updatedComments);
       
+      console.log('서버에서 최신 댓글 목록 가져옴 (대댓글)');
+      
     } catch (err) {
       console.error('대댓글 작성 실패:', err);
-      alert('대댓글 작성에 실패했습니다.');
+      
+      // 에러 발생 시 댓글 목록 새로고침 (임시 대댓글 제거)
+      try {
+        const updatedComments = await commentsApi.getCommentsByPostId(Number(id));
+        setComments(updatedComments);
+      } catch {
+        // 새로고침도 실패하면 임시 대댓글만 제거
+        setComments(prev => prev.filter(comment => comment.id !== Date.now()));
+      }
+      
+      alert('대댓글 작성에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setSubmittingReply(false);
     }
@@ -397,7 +485,7 @@ const PostDetail = () => {
               </span>
               <span className="flex items-center">
                 <span className="text-slate-500 mr-2">👀</span>
-                {'views' in displayPost ? (displayPost as any).views : 0}
+                {'viewCount' in displayPost ? displayPost.viewCount : ('views' in displayPost ? (displayPost as any).views : 0)}
               </span>
               {/* <span>💬 {displayComments.length} 댓글</span> */}
             </div>

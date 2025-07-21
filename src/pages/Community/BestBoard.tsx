@@ -154,8 +154,10 @@ const BestBoard = () => {
           }
           return 0
         case 'views':
-          // 임시 데이터용
-          if ('views' in a) {
+          // API 데이터의 viewCount 우선 사용, 없으면 임시 데이터의 views 사용
+          if ('viewCount' in a && 'viewCount' in b) {
+            return (b as any).viewCount - (a as any).viewCount
+          } else if ('views' in a && 'views' in b) {
             return (b as any).views - (a as any).views
           }
           return 0
@@ -334,7 +336,7 @@ const BestBoard = () => {
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-[#B8DCCC]">{post.title}</h3>
                       <div className="text-sm text-gray-600 mt-1">
-                        작성자: {'userNickname' in post ? post.userNickname : (post as any).writer} · 💬 {'comments' in post ? (post as any).comments : 0} 댓글 · 👁️ {'views' in post ? (post as any).views : 0} 조회
+                        작성자: {'userNickname' in post ? post.userNickname : (post as any).writer} · 💬 {'comments' in post ? (post as any).comments : 0} 댓글 · 👁️ {'viewCount' in post ? post.viewCount : ('views' in post ? (post as any).views : 0)} 조회
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
                         {post.createdAt}

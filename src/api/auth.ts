@@ -403,4 +403,33 @@ export const checkAndRefreshToken = async (): Promise<boolean> => {
   }
   
   return true;
+};
+
+// 회원 탈퇴
+export const deleteAccount = async (): Promise<ApiResponse> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/users/me`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      // 탈퇴 성공 시 로컬 스토리지에서 모든 사용자 정보 삭제
+      logout();
+      return { success: true, message: data.message || "회원 탈퇴가 완료되었습니다." };
+    } else {
+      const errorData = await response.json();
+      return { 
+        success: false, 
+        message: errorData.error || "회원 탈퇴에 실패했습니다." 
+      };
+    }
+  } catch (error) {
+    console.error('회원 탈퇴 오류:', error);
+    return { success: false, message: "네트워크 오류가 발생했습니다." };
+  }
 }; 

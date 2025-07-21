@@ -133,6 +133,12 @@
   gap: 1rem;
 }
 
+.profile-buttons {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
 .save-button {
   background: #10b981;
   color: white;
@@ -170,6 +176,29 @@
   background: #4b5563;
 }
 
+.delete-button {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.delete-button:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
+.delete-button:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .loading, .error {
   text-align: center;
   padding: 2rem;
@@ -199,11 +228,11 @@
     padding: 1.5rem;
   }
   
-  .edit-actions {
+  .edit-actions, .profile-buttons {
     flex-direction: column;
   }
   
-  .save-button, .cancel-button {
+  .save-button, .cancel-button, .edit-button, .delete-button {
     width: 100%;
   }
 } 
