@@ -7,6 +7,7 @@ import WritePost from './pages/Community/WritePost'
 import EditPost from './pages/Community/EditPost'
 import FreeBoard from './pages/Community/FreeBoard'
 import BestBoard from './pages/Community/BestBoard'
+import BookmarkBoard from './pages/Community/BookmarkBoard'
 import Verify from './pages/Admission/verify'
 import './App.css'
 
@@ -117,6 +118,18 @@ function App() {
           <Layout>
             <BestBoard />
           </Layout>
+        } 
+      />
+
+      {/* 북마크 게시판 */}
+      <Route 
+        path="/community/bookmark" 
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <BookmarkBoard />
+            </Layout>
+          </ProtectedRoute>
         } 
       />
 

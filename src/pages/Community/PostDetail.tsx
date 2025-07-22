@@ -4,6 +4,9 @@ import '../Home/Home.css'
 import { postsApi, commentsApi } from '../../api/posts'
 import type { PostResponseDto, CommentResponseDto, CommentRequestDto, CommentUpdateRequestDto } from '../../api/posts'
 import { getCurrentUser, isAuthenticated } from '../../api/auth'
+import PostLikeButton from '../../components/PostLikeButton'
+import CommentLikeButton from '../../components/CommentLikeButton'
+import BookmarkButton from '../../components/BookmarkButton'
 
 const PostDetail = () => {
   const { id } = useParams()
@@ -487,7 +490,12 @@ const PostDetail = () => {
                 <span className="text-slate-500 mr-2">👀</span>
                 {'viewCount' in displayPost ? displayPost.viewCount : ('views' in displayPost ? (displayPost as any).views : 0)}
               </span>
-              {/* <span>💬 {displayComments.length} 댓글</span> */}
+              <span className="flex items-center">
+                <span className="text-slate-500 mr-2">💬</span>
+                {comments.length} 댓글
+              </span>
+              <PostLikeButton key={`post-${displayPost.id}`} postId={displayPost.id} size="md" />
+              <BookmarkButton key={`bookmark-${displayPost.id}`} postId={displayPost.id} size="md" />
             </div>
             <div className="flex items-center">
               <span className="text-slate-500 mr-2">📅</span>
@@ -519,7 +527,8 @@ const PostDetail = () => {
                         {comment.createdAt}
                       </span>
                     </div>
-                    <div className="flex space-x-2">
+                    <div className="flex items-center space-x-2">
+                      <CommentLikeButton key={`comment-${comment.id}`} postId={Number(id)} commentId={comment.id} size="sm" />
                       {/* 답글 버튼 */}
                       {currentUser && (
                         <button
@@ -622,22 +631,25 @@ const PostDetail = () => {
                               {reply.createdAt}
                             </span>
                           </div>
-                          {isCommentAuthor(reply) && (
-                            <div className="flex space-x-1">
-                              <button
-                                onClick={() => handleEditComment(reply)}
-                                className="px-2 py-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 text-xs transition-colors rounded-md border border-blue-200"
-                              >
-                                수정
-                              </button>
-                              <button
-                                onClick={() => handleDeleteComment(reply.id)}
-                                className="px-2 py-1 text-red-600 hover:text-red-700 hover:bg-red-50 text-xs transition-colors rounded-md border border-red-200"
-                              >
-                                삭제
-                              </button>
-                            </div>
-                          )}
+                          <div className="flex items-center space-x-1">
+                            <CommentLikeButton key={`reply-${reply.id}`} postId={Number(id)} commentId={reply.id} size="sm" />
+                            {isCommentAuthor(reply) && (
+                              <>
+                                <button
+                                  onClick={() => handleEditComment(reply)}
+                                  className="px-2 py-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 text-xs transition-colors rounded-md border border-blue-200"
+                                >
+                                  수정
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteComment(reply.id)}
+                                  className="px-2 py-1 text-red-600 hover:text-red-700 hover:bg-red-50 text-xs transition-colors rounded-md border border-red-200"
+                                >
+                                  삭제
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </div>
                         
                         {/* 대댓글 내용 또는 수정 폼 */}

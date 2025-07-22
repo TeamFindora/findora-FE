@@ -30,21 +30,30 @@ const apiClient = {
     return data
   },
 
-  post: async (url: string, data: any) => {
+  post: async (url: string, data?: any) => {
     const accessToken = localStorage.getItem('accessToken')
     const tokenType = localStorage.getItem('tokenType') || 'Bearer'
+    console.log('POST 요청 URL:', `${API_BASE_URL}${url}`)
     console.log('POST 요청 토큰:', accessToken)
     console.log('POST 요청 토큰 타입:', tokenType)
     console.log('POST 요청 데이터:', data)
     
-    const response = await fetch(`${API_BASE_URL}${url}`, {
+    const headers: Record<string, string> = {
+      ...(accessToken && { Authorization: `${tokenType} ${accessToken}` })
+    }
+    
+    // 데이터가 있을 때만 Content-Type과 body 설정
+    const fetchOptions: RequestInit = {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(accessToken && { Authorization: `${tokenType} ${accessToken}` })
-      },
-      body: JSON.stringify(data)
-    })
+      headers
+    }
+    
+    if (data !== undefined && data !== null) {
+      headers['Content-Type'] = 'application/json'
+      fetchOptions.body = JSON.stringify(data)
+    }
+    
+    const response = await fetch(`${API_BASE_URL}${url}`, fetchOptions)
     
     console.log('POST 응답 상태:', response.status)
     console.log('POST 응답 헤더:', Object.fromEntries(response.headers.entries()))
@@ -53,16 +62,6 @@ const apiClient = {
       const errorText = await response.text()
       console.log('POST 에러 응답:', errorText)
       console.log('POST 에러 상태:', response.status)
-      console.log('POST 에러 헤더:', Object.fromEntries(response.headers.entries()))
-      
-      // 403 에러인 경우 더 자세한 정보 출력
-      if (response.status === 403) {
-        console.error('403 Forbidden - 권한 부족. 가능한 원인:')
-        console.error('1. 토큰이 만료됨')
-        console.error('2. 사용자 권한이 부족함')
-        console.error('3. 백엔드 권한 검증 실패')
-      }
-      
       throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`)
     }
     
@@ -88,20 +87,34 @@ const apiClient = {
     }
   },
 
-  delete: async (url: string) => {
+  delete: async (url: string, data?: any) => {
     const accessToken = localStorage.getItem('accessToken')
     const tokenType = localStorage.getItem('tokenType') || 'Bearer'
-    const response = await fetch(`${API_BASE_URL}${url}`, {
+    
+    const headers: Record<string, string> = {
+      ...(accessToken && { Authorization: `${tokenType} ${accessToken}` })
+    }
+    
+    const fetchOptions: RequestInit = {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(accessToken && { Authorization: `${tokenType} ${accessToken}` })
-      }
-    })
+      headers
+    }
+    
+    // 데이터가 있을 때만 Content-Type과 body 설정
+    if (data !== undefined && data !== null) {
+      headers['Content-Type'] = 'application/json'
+      fetchOptions.body = JSON.stringify(data)
+    }
+    
+    const response = await fetch(`${API_BASE_URL}${url}`, fetchOptions)
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
+    
+    // 응답이 있으면 JSON으로 파싱, 없으면 빈 객체 반환
+    const responseText = await response.text()
+    return responseText ? JSON.parse(responseText) : {}
   }
 }
 
@@ -162,6 +175,41 @@ export interface CommentRequestDto {
 
 export interface CommentUpdateRequestDto {
   content: string
+}
+
+// 좋아요 타입 정의 (게시글용)
+export interface PostLikeResponseDto {
+  postLiked: boolean
+  likeCount: number
+}
+
+// 댓글 좋아요 타입 정의
+export interface CommentLikeResponseDto {
+  commentLiked: boolean
+  likeCount: number
+}
+
+export interface LikeCountResponse {
+  postLikeCount?: number
+  commentLikeCount?: number
+}
+
+export interface SuccessResponse {
+  success: boolean
+  message?: string
+}
+
+// 북마크 타입 정의
+export interface BookmarkRequestDto {
+  postId: number
+}
+
+export interface BookmarkResponseDto {
+  id: number
+  postId: number
+  postTitle: string
+  userId: number
+  createdAt: string
 }
 
 // 게시글 API 함수들
@@ -265,6 +313,66 @@ export const commentsApi = {
   // 댓글 삭제
   deleteComment: async (postId: number, commentId: number): Promise<void> => {
     await apiClient.delete(`/api/posts/${postId}/comments/${commentId}`)
+  }
+}
+
+// 좋아요 API 함수들
+export const likesApi = {
+  // 게시글 좋아요 상태 조회
+  getPostLikeStatus: async (postId: number): Promise<PostLikeResponseDto> => {
+    const response = await apiClient.get(`/api/posts/${postId}/likes/status`)
+    return response
+  },
+
+  // 게시글 좋아요 토글 (누르기/취소)
+  togglePostLike: async (postId: number): Promise<SuccessResponse> => {
+    const response = await apiClient.post(`/api/posts/${postId}/likes/toggle`)
+    return response
+  },
+
+  // 댓글 좋아요 상태 조회
+  getCommentLikeStatus: async (postId: number, commentId: number): Promise<CommentLikeResponseDto> => {
+    const response = await apiClient.get(`/api/posts/${postId}/likes/comments/${commentId}/status`)
+    return response
+  },
+
+  // 댓글 좋아요 토글 (누르기/취소)
+  toggleCommentLike: async (postId: number, commentId: number): Promise<SuccessResponse> => {
+    const response = await apiClient.post(`/api/posts/${postId}/likes/comments/${commentId}/toggle`)
+    return response
+  },
+
+  // 게시글 좋아요 수 조회
+  getPostLikeCount: async (postId: number): Promise<number> => {
+    const response = await apiClient.get(`/api/posts/${postId}/likes/count`)
+    return response.postLikeCount || 0
+  },
+
+  // 댓글 좋아요 수 조회
+  getCommentLikeCount: async (postId: number, commentId: number): Promise<number> => {
+    const response = await apiClient.get(`/api/posts/${postId}/likes/comments/${commentId}/count`)
+    return response.commentLikeCount || 0
+  }
+}
+
+// 북마크 API 함수들
+export const bookmarksApi = {
+  // 즐겨찾기 추가
+  addBookmark: async (postId: number): Promise<SuccessResponse> => {
+    const response = await apiClient.post('/api/bookmarks', { postId })
+    return response
+  },
+
+  // 즐겨찾기 삭제
+  removeBookmark: async (postId: number): Promise<SuccessResponse> => {
+    const response = await apiClient.delete('/api/bookmarks', { postId })
+    return response
+  },
+
+  // 내 즐겨찾기 목록 조회
+  getMyBookmarks: async (): Promise<BookmarkResponseDto[]> => {
+    const response = await apiClient.get('/api/bookmarks/user/me')
+    return Array.isArray(response) ? response : response.data || []
   }
 }
 

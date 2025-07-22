@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useState, useMemo, useEffect } from 'react'
 import { postsApi } from '../../api/posts'
 import type { PostResponseDto } from '../../api/posts'
+import CommentCount from '../../components/CommentCount'
 
 const BestBoard = () => {
   const navigate = useNavigate()
@@ -335,8 +336,13 @@ const BestBoard = () => {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-[#B8DCCC]">{post.title}</h3>
-                      <div className="text-sm text-gray-600 mt-1">
-                        작성자: {'userNickname' in post ? post.userNickname : (post as any).writer} · 💬 {'comments' in post ? (post as any).comments : 0} 댓글 · 👁️ {'viewCount' in post ? post.viewCount : ('views' in post ? (post as any).views : 0)} 조회
+                      <div className="text-sm text-gray-600 mt-1 flex items-center gap-2">
+                        <span>작성자: {'userNickname' in post ? post.userNickname : (post as any).writer}</span>
+                        <span>·</span>
+                        <CommentCount postId={post.id} />
+                        <span>댓글</span>
+                        <span>·</span>
+                        <span>👁️ {'viewCount' in post ? post.viewCount : ('views' in post ? (post as any).views : 0)} 조회</span>
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
                         {post.createdAt}

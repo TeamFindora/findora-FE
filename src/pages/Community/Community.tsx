@@ -1,8 +1,10 @@
 import '../Home/Home.css'
 import { useNavigate } from 'react-router-dom'
 import { useState, useMemo, useEffect } from 'react'
-import { postsApi, CATEGORIES } from '../../api/posts'
+import { bookmarksApi, postsApi, CATEGORIES } from '../../api/posts'
 import type { PostResponseDto } from '../../api/posts'
+import CommentCount from '../../components/CommentCount'
+import { isAuthenticated } from '../../api/auth'
 
 const Community = () => {
   const navigate = useNavigate()
@@ -10,42 +12,77 @@ const Community = () => {
   const [sortBy, setSortBy] = useState('latest')
   const [currentPage, setCurrentPage] = useState(1)
   const postsPerPage = 5
-  const [activeTab, setActiveTab] = useState<'free' | 'best'>('free')
+  const [activeTab, setActiveTab] = useState<'free' | 'best' | 'bookmark'>('free')
   const [posts, setPosts] = useState<PostResponseDto[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // 게시글 데이터 로드
+  // 북마크 관련 상태
+  const [bookmarkLoading, setBookmarkLoading] = useState(false)
+  const [bookmarkError, setBookmarkError] = useState<string | null>(null)
+  const [bookmarkedPosts, setBookmarkedPosts] = useState<PostResponseDto[]>([])
+  const [bookmarkSearch, setBookmarkSearch] = useState('')
+  const [bookmarkSort, setBookmarkSort] = useState('latest')
+  const [bookmarkPage, setBookmarkPage] = useState(1)
+  const bookmarkPostsPerPage = 10;
+
+  // 게시글 데이터 로드 (자유/베스트)
   useEffect(() => {
     const loadPosts = async () => {
       try {
         setLoading(true)
         const allPosts = await postsApi.getAllPosts()
-        console.log('API 응답 데이터:', allPosts) // 디버깅용 로그
-        
-        // API 응답이 배열인지 확인하고 설정
         if (Array.isArray(allPosts)) {
-          console.log('API 데이터 사용:', allPosts.length, '개의 게시글')
           setPosts(allPosts)
         } else if (allPosts && typeof allPosts === 'object' && 'data' in allPosts && Array.isArray((allPosts as any).data)) {
-          console.log('API data 필드 사용:', (allPosts as any).data.length, '개의 게시글')
           setPosts((allPosts as any).data)
         } else {
-          console.log('API 응답이 예상과 다름:', allPosts)
           setPosts([])
         }
         setError(null)
       } catch (err) {
-        console.error('게시글 로드 실패:', err)
         setError('게시글을 불러오는데 실패했습니다.')
         setPosts([])
       } finally {
         setLoading(false)
       }
     }
-
     loadPosts()
   }, [])
+
+  // 북마크 게시글 데이터 로드
+  useEffect(() => {
+    if (activeTab !== 'bookmark') return;
+    const loadBookmarkedPosts = async () => {
+      if (!isAuthenticated()) {
+        setBookmarkLoading(false)
+        setBookmarkError('로그인이 필요한 서비스입니다.')
+        return
+      }
+      try {
+        setBookmarkLoading(true)
+        const bookmarks = await bookmarksApi.getMyBookmarks()
+        if (bookmarks.length === 0) {
+          setBookmarkedPosts([])
+          setBookmarkError(null)
+          return
+        }
+        const postDetailsPromises = bookmarks.map(bookmark => 
+          postsApi.getPostById(bookmark.postId).catch(() => null)
+        )
+        const postDetails = await Promise.all(postDetailsPromises)
+        const validPosts = postDetails.filter((post): post is PostResponseDto => post !== null)
+        setBookmarkedPosts(validPosts)
+        setBookmarkError(null)
+      } catch (err) {
+        setBookmarkError('북마크 목록을 불러오는데 실패했습니다.')
+        setBookmarkedPosts([])
+      } finally {
+        setBookmarkLoading(false)
+      }
+    }
+    loadBookmarkedPosts()
+  }, [activeTab])
 
   // 임시 데이터 (API 연동 전까지 사용)
   const mockPosts = [
@@ -188,6 +225,33 @@ const Community = () => {
   const bestBoardPosts = posts && posts.length > 0 
     ? [...posts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     : [...mockPosts].sort((a, b) => (b.views + b.comments * 10) - (a.views + a.comments * 10))
+
+  // 북마크 게시글 필터/정렬/페이지네이션
+  const filteredAndSortedBookmarks = useMemo(() => {
+    const filtered = bookmarkedPosts.filter(post => {
+      const searchMatch = bookmarkSearch === '' || 
+        post.title.toLowerCase().includes(bookmarkSearch.toLowerCase()) ||
+        (post.userNickname || '').toLowerCase().includes(bookmarkSearch.toLowerCase())
+      return searchMatch
+    })
+    filtered.sort((a, b) => {
+      switch (bookmarkSort) {
+        case 'latest':
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        case 'oldest':
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        case 'views':
+          return (b.viewCount || 0) - (a.viewCount || 0)
+        default:
+          return 0
+      }
+    })
+    return filtered
+  }, [bookmarkedPosts, bookmarkSearch, bookmarkSort])
+  const bookmarkTotalPages = Math.ceil(filteredAndSortedBookmarks.length / bookmarkPostsPerPage)
+  const bookmarkStartIndex = (bookmarkPage - 1) * bookmarkPostsPerPage
+  const bookmarkEndIndex = bookmarkStartIndex + bookmarkPostsPerPage
+  const bookmarkCurrentPosts = filteredAndSortedBookmarks.slice(bookmarkStartIndex, bookmarkEndIndex)
 
   // 페이지 변경 시 상단으로 스크롤
   const handlePageChange = (page: number) => {
@@ -359,7 +423,7 @@ const Community = () => {
                   <div className="text-xs text-slate-500 mb-2">📅 {post.createdAt}</div>
                   <div className="text-xs text-slate-600 flex items-center gap-3">
                     <span>👀 {'viewCount' in post ? post.viewCount : ('views' in post ? (post as any).views : 0)}</span>
-                    <span>💬 {'comments' in post ? (post as any).comments : 0}</span>
+                    <CommentCount postId={post.id} />
                   </div>
                 </div>
               ))}
@@ -383,6 +447,12 @@ const Community = () => {
               >
                 ⭐ 베스트 게시판
               </button>
+              <button
+                className="px-6 py-3 rounded-lg font-semibold transition-colors bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100"
+                onClick={() => setActiveTab('bookmark')}
+              >
+                📚 내 북마크
+              </button>
             </div>
             <button
               onClick={() => navigate(`/community/${activeTab}`)}
@@ -393,31 +463,150 @@ const Community = () => {
           </div>
         )}
 
-        {/* 게시글 목록 (탭에 따라 다르게) - 최대 5개만 표시 */}
+        {/* 게시글 목록 (탭에 따라 다르게) */}
         {!loading && !error && (
-          <div className="space-y-4">
-            {(activeTab === 'free' ? currentPosts : bestBoardPosts.slice(0, 5)).map(post => (
-              <div
-                key={post.id}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer"
-                onClick={() => navigate(`/community/post/${post.id}`)}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-semibold text-slate-800 mb-3 line-clamp-2">{post.title}</h3>
-                    <div className="text-sm text-slate-600 mb-2 flex items-center gap-4">
-                      <span>👤 {'userNickname' in post ? post.userNickname : (post as any).writer}</span>
-                      <span>💬 {'comments' in post ? (post as any).comments : 0}</span>
-                      <span>👀 {'viewCount' in post ? post.viewCount : ('views' in post ? (post as any).views : 0)}</span>
+          <>
+            {activeTab === 'bookmark' ? (
+              <>
+                {/* 북마크 전용 검색/정렬/초기화 */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+                  <form onSubmit={e => { e.preventDefault(); }} className="space-y-6">
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          value={bookmarkSearch}
+                          onChange={e => { setBookmarkSearch(e.target.value); setBookmarkPage(1); }}
+                          placeholder="제목, 작성자로 검색..."
+                          className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent text-slate-800 text-lg"
+                        />
+                      </div>
                     </div>
-                    <div className="text-xs text-slate-500">
-                      📅 {post.createdAt}
+                    <div className="flex items-center justify-between">
+                      <div></div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-medium text-slate-700">정렬:</span>
+                        <select
+                          value={bookmarkSort}
+                          onChange={e => { setBookmarkSort(e.target.value); setBookmarkPage(1); }}
+                          className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 text-slate-700"
+                        >
+                          <option value="latest">최신순</option>
+                          <option value="oldest">오래된순</option>
+                          <option value="views">조회순</option>
+                        </select>
+                      </div>
+                    </div>
+                    {(bookmarkSearch || bookmarkSort !== 'latest') && (
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => { setBookmarkSearch(''); setBookmarkSort('latest'); setBookmarkPage(1); }}
+                          className="text-sm text-slate-500 hover:text-yellow-600 transition-colors"
+                        >
+                          초기화
+                        </button>
+                      </div>
+                    )}
+                  </form>
+                </div>
+                {/* 북마크 게시글 목록 */}
+                <div className="space-y-4">
+                  {bookmarkCurrentPosts.length === 0 ? (
+                    <div className="text-center py-16">
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 inline-block">
+                        <div className="text-slate-600 text-lg mb-3">북마크한 게시글이 없습니다</div>
+                        <button
+                          onClick={() => setActiveTab('free')}
+                          className="bg-yellow-400 text-black px-6 py-3 rounded-lg hover:bg-yellow-500 transition-colors font-medium"
+                        >
+                          게시글 둘러보기
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    bookmarkCurrentPosts.map(post => (
+                      <div
+                        key={post.id}
+                        className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer"
+                        onClick={() => navigate(`/community/post/${post.id}`)}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h3 className="text-xl font-semibold text-slate-800 mb-3 line-clamp-2">{post.title}</h3>
+                            <div className="text-sm text-slate-600 mb-2 flex items-center gap-4">
+                              <span>👤 {post.userNickname || (post as any).writer}</span>
+                              <CommentCount postId={post.id} />
+                              <span>👀 {post.viewCount || (post as any).views || 0}</span>
+                            </div>
+                            <div className="text-xs text-slate-500">
+                              📅 {post.createdAt}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                {/* 북마크 페이지네이션 */}
+                {bookmarkTotalPages > 1 && (
+                  <div className="flex justify-center items-center space-x-2 mt-8">
+                    <button
+                      onClick={() => setBookmarkPage(bookmarkPage - 1)}
+                      disabled={bookmarkPage === 1}
+                      className="px-3 py-2 rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      이전
+                    </button>
+                    {Array.from({ length: bookmarkTotalPages }, (_, i) => i + 1).map(page => (
+                      <button
+                        key={page}
+                        onClick={() => setBookmarkPage(page)}
+                        className={`px-3 py-2 rounded-lg transition-colors ${
+                          bookmarkPage === page
+                            ? 'bg-yellow-400 text-black font-medium'
+                            : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setBookmarkPage(bookmarkPage + 1)}
+                      disabled={bookmarkPage === bookmarkTotalPages}
+                      className="px-3 py-2 rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      다음
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="space-y-4">
+                {(activeTab === 'free' ? currentPosts : bestBoardPosts.slice(0, 5)).map(post => (
+                  <div
+                    key={post.id}
+                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer"
+                    onClick={() => navigate(`/community/post/${post.id}`)}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="text-xl font-semibold text-slate-800 mb-3 line-clamp-2">{post.title}</h3>
+                        <div className="text-sm text-slate-600 mb-2 flex items-center gap-4">
+                          <span>👤 {'userNickname' in post ? post.userNickname : (post as any).writer}</span>
+                          <CommentCount postId={post.id} />
+                          <span>👀 {'viewCount' in post ? post.viewCount : ('views' in post ? (post as any).views : 0)}</span>
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          📅 {post.createdAt}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
     </div>
