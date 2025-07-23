@@ -251,6 +251,7 @@ export const logout = (): void => {
 };
 
 // 사용자 프로필 조회
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const getUserProfile = async (): Promise<any> => {
   try {
     const user = getCurrentUser();

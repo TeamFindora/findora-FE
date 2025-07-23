@@ -282,12 +282,12 @@ const Community = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8 px-4">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-white text-white">
+      <div className="community-list-wrap">
         {/* Header */}
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-slate-800 mb-3">커뮤니티</h1>
-          <p className="text-slate-600 text-lg">
+        <div className="text-center py-20 bg-zinc-100">
+          <h1 className="text-3xl font-bold text-black mb-2">커뮤니티</h1>
+          <p className="text-black text-sm mt-5">
             질문하고 나누는 자유로운 공간입니다.
           </p>
         </div>
