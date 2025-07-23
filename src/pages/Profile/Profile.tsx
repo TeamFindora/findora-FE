@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getCurrentUser, getUserProfile, updateUserProfile } from '../../api'
+import { getCurrentUser, getUserProfile, updateNickname, deleteAccount } from '../../api'
 import './Profile.css'
 
 const Profile = () => {
@@ -10,8 +10,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [formData, setFormData] = useState({
-    nickname: '',
-    email: ''
+    nickname: ''
   })
 
   useEffect(() => {
@@ -25,8 +24,7 @@ const Profile = () => {
       if (localUser) {
         setUser(localUser)
         setFormData({
-          nickname: localUser.nickname,
-          email: localUser.email
+          nickname: localUser.nickname
         })
       }
 
@@ -35,8 +33,7 @@ const Profile = () => {
       if (result.success) {
         setUser(result.data)
         setFormData({
-          nickname: result.data.nickname,
-          email: result.data.email
+          nickname: result.data.nickname
         })
       }
     } catch (error) {
@@ -56,14 +53,14 @@ const Profile = () => {
   const handleSave = async () => {
     try {
       setLoading(true)
-      const result = await updateUserProfile(formData)
+      const result = await updateNickname(formData.nickname)
       
       if (result.success) {
-        alert('프로필이 성공적으로 수정되었습니다.')
+        alert('닉네임이 성공적으로 수정되었습니다.')
         setEditing(false)
         
         // 로컬 사용자 정보 업데이트
-        const updatedUser = { ...user, ...formData }
+        const updatedUser = { ...user, nickname: formData.nickname }
         localStorage.setItem('user', JSON.stringify(updatedUser))
         setUser(updatedUser)
         
@@ -73,7 +70,7 @@ const Profile = () => {
         alert(result.message)
       }
     } catch (error) {
-      alert('프로필 수정 중 오류가 발생했습니다.')
+      alert('닉네임 수정 중 오류가 발생했습니다.')
     } finally {
       setLoading(false)
     }
@@ -81,10 +78,37 @@ const Profile = () => {
 
   const handleCancel = () => {
     setFormData({
-      nickname: user?.nickname || '',
-      email: user?.email || ''
+      nickname: user?.nickname || ''
     })
     setEditing(false)
+  }
+
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm('정말로 회원 탈퇴를 하시겠습니까?\n\n탈퇴 시 모든 데이터가 삭제되며 복구할 수 없습니다.')
+    
+    if (!confirmed) return
+
+    const doubleConfirmed = window.confirm('한 번 더 확인합니다.\n\n정말로 회원 탈퇴를 진행하시겠습니까?')
+    
+    if (!doubleConfirmed) return
+
+    try {
+      setLoading(true)
+      const result = await deleteAccount()
+      
+      if (result.success) {
+        alert(result.message)
+        // 상태 업데이트 이벤트 발생
+        window.dispatchEvent(new Event('auth-change'))
+        navigate('/')
+      } else {
+        alert(result.message)
+      }
+    } catch (error) {
+      alert('회원 탈퇴 중 오류가 발생했습니다.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (loading) {
@@ -144,16 +168,7 @@ const Profile = () => {
             
             <div className="info-item">
               <label>이메일</label>
-              {editing ? (
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  className="edit-input"
-                />
-              ) : (
-                <span>{user.email}</span>
-              )}
+              <span>{user.email}</span>
             </div>
             
             <div className="info-item">
@@ -182,12 +197,21 @@ const Profile = () => {
                 </button>
               </div>
             ) : (
-              <button 
-                className="edit-button"
-                onClick={() => setEditing(true)}
-              >
-                프로필 수정
-              </button>
+              <div className="profile-buttons">
+                <button 
+                  className="edit-button"
+                  onClick={() => setEditing(true)}
+                >
+                  프로필 수정
+                </button>
+                <button 
+                  className="delete-button"
+                  onClick={handleDeleteAccount}
+                  disabled={loading}
+                >
+                  {loading ? '처리 중...' : '회원 탈퇴'}
+                </button>
+              </div>
             )}
           </div>
         </div>
