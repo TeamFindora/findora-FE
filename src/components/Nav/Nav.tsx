@@ -1,6 +1,8 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { isAuthenticated, getCurrentUser, logout } from '../../api'
+import UserDropdown from './UserDropdown'
+import MessageSidebar from '../Messaging/MessageSidebar'
 import './Nav.css'
 
 const Nav = () => {
@@ -8,6 +10,7 @@ const Nav = () => {
   const navigate = useNavigate()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [user, setUser] = useState<any>(null)
+  const [isMessageSidebarOpen, setIsMessageSidebarOpen] = useState(false)
   
   useEffect(() => {
     const checkAuthStatus = () => {
@@ -50,6 +53,14 @@ const Nav = () => {
     
     navigate('/')
   }
+
+  const handleMessageClick = () => {
+    setIsMessageSidebarOpen(true)
+  }
+
+  const handleMessageSidebarClose = () => {
+    setIsMessageSidebarOpen(false)
+  }
   
   return (
     <nav className="nav">
@@ -90,17 +101,10 @@ const Nav = () => {
         {isLoggedIn && user ? (
           <>
             <li className="nav-item">
-              <Link 
-                to="/profile" 
-                className={`nav-link ${location.pathname === '/profile' ? 'active' : ''}`}
-              >
-                내 프로필
-              </Link>
-            </li>
-            <li className="nav-item">
-              <span className="nav-user">
-                {user.nickname}님
-              </span>
+              <UserDropdown 
+                user={user}
+                onMessageClick={handleMessageClick}
+              />
             </li>
             <li className="nav-item">
               <button 
@@ -132,6 +136,12 @@ const Nav = () => {
           </>
         )}
       </ul>
+      
+      {/* 메시지 사이드바 */}
+      <MessageSidebar 
+        isOpen={isMessageSidebarOpen}
+        onClose={handleMessageSidebarClose}
+      />
     </nav>
   )
 }
