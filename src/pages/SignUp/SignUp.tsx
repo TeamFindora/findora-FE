@@ -64,6 +64,15 @@ const SignUp = () => {
         [field]: { status: '', message: '', checked: false }
       }));
     }
+    
+    // 이메일이 변경되면 인증 상태 초기화
+    if (field === 'email') {
+      setValidation(prev => ({
+        ...prev,
+        email: { status: '', message: '', verified: false, codeSent: false }
+      }));
+      setFormData(prev => ({ ...prev, verificationCode: '' }));
+    }
   };
 
   const handleNicknameCheck = async () => {
@@ -136,31 +145,44 @@ const SignUp = () => {
       return;
     }
 
-    setLoading(prev => ({ ...prev, email: true }));
+    // 즉시 인증번호 입력칸 표시 (UX 개선)
+    setValidation(prev => ({
+      ...prev,
+      email: {
+        status: 'success',
+        message: '인증번호를 발송했습니다. 이메일을 확인해주세요.',
+        verified: false,
+        codeSent: true
+      }
+    }));
     
+    // 백그라운드에서 API 호출
     try {
       const result = await sendEmailVerification(formData.email);
-      setValidation(prev => ({
-        ...prev,
-        email: {
-          status: result.success ? 'success' : 'error',
-          message: result.message,
-          verified: false,
-          codeSent: result.success
-        }
-      }));
+      
+      // API 실패 시에만 상태 업데이트
+      if (!result.success) {
+        setValidation(prev => ({
+          ...prev,
+          email: {
+            status: 'error',
+            message: result.message,
+            verified: false,
+            codeSent: false
+          }
+        }));
+      }
     } catch (error) {
+      // 네트워크 오류 시에만 상태 업데이트
       setValidation(prev => ({
         ...prev,
         email: {
           status: 'error',
-          message: '네트워크 오류가 발생했습니다.',
+          message: '네트워크 오류가 발생했습니다. 다시 시도해주세요.',
           verified: false,
           codeSent: false
         }
       }));
-    } finally {
-      setLoading(prev => ({ ...prev, email: false }));
     }
   };
 
@@ -420,9 +442,9 @@ const SignUp = () => {
                 type="button" 
                 className="verify-button"
                 onClick={handleEmailVerification}
-                disabled={loading.email}
+                disabled={validation.email.codeSent}
               >
-                {loading.email ? '발송중...' : '인증'}
+                {validation.email.codeSent ? '발송완료' : '인증'}
               </button>
             </div>
           </div>
