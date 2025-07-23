@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import CommentCount from '../../components/CommentCount'
-import { useBestBoard } from '../../hooks/pages/useBestBoard'
+import { useFreeBoard } from '../../hooks/pages/useFreeBoard'
 
-const BestBoard = () => {
+const FreeBoard = () => {
   const navigate = useNavigate()
   
   const {
@@ -36,44 +36,147 @@ const BestBoard = () => {
     // 통합 기능
     resetAllFilters,
     hasAnyFilter
-  } = useBestBoard()
+  } = useFreeBoard()
+
+  // 게시글 데이터 로드
+  useEffect(() => {
+    const loadPosts = async () => {
+      try {
+        setLoading(true)
+        const allPosts = await postsApi.getAllPosts()
+        if (Array.isArray(allPosts)) {
+          setPosts(allPosts)
+        } else if (allPosts && typeof allPosts === 'object' && 'data' in allPosts && Array.isArray((allPosts as any).data)) {
+          setPosts((allPosts as any).data)
+        } else {
+          setPosts([])
+        }
+        setError(null)
+      } catch (err) {
+        setError('게시글을 불러오는데 실패했습니다.')
+        setPosts([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadPosts()
+  }, [])
+
+
+  // 검색, 필터링, 정렬된 게시글
+  const filteredAndSortedPosts = useMemo(() => {
+    // API 데이터가 있으면 사용, 없으면 임시 데이터 사용
+    const dataToUse = posts && posts.length > 0 ? posts : mockPosts
+    
+    // 1. 필터링
+    let filtered = dataToUse.filter(post => {
+      // 검색어 필터링 (제목, 작성자에서 검색)
+      const searchMatch = searchTerm === '' || 
+        post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (('userNickname' in post ? post.userNickname : (post as any).writer) || '').toLowerCase().includes(searchTerm.toLowerCase())
+      
+      return searchMatch
+    })
+
+    // 2. 정렬
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'latest':
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        case 'oldest':
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        case 'popular':
+          // API 데이터는 생성일 기준으로 정렬 (조회수/댓글수 정보가 없으므로)
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        case 'comments':
+          // 임시 데이터용
+          if ('comments' in a) {
+            return (b as any).comments - (a as any).comments
+          }
+          return 0
+        case 'views':
+          // 임시 데이터용
+          if ('views' in a) {
+            return (b as any).views - (a as any).views
+          }
+          return 0
+        default:
+          return 0
+      }
+    })
+
+    return filtered
+  }, [posts, searchTerm, sortBy])
+
+  // 페이지네이션 계산
+  const totalPages = Math.ceil(filteredAndSortedPosts.length / postsPerPage)
+  const startIndex = (currentPage - 1) * postsPerPage
+  const endIndex = startIndex + postsPerPage
+  const currentPosts = filteredAndSortedPosts.slice(startIndex, endIndex)
+
+  // 페이지 변경 시 상단으로 스크롤
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  // 검색어나 필터 변경 시 페이지 초기화
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value)
+    setCurrentPage(1)
+  }
+
+  const handleSortChange = (sort: string) => {
+    setSortBy(sort)
+    setCurrentPage(1)
+  }
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+  }
+
+  const clearSearch = () => {
+    setSearchTerm('')
+    setSortBy('latest')
+    setCurrentPage(1)
+  }
 
   return (
-    <div className="min-h-screen bg-white text-white">
-      <div className="text-center py-20 bg-zinc-100">
-        {/* Header */}
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-6xl mx-auto py-8 px-4">
         <div className="text-center mb-12">
-          <h1 className="text-3xl font-bold text-[#B8DCCC] mb-2">베스트 게시판</h1>
-          <p className="text-gray-300 text-sm">
-            인기 있는 게시글들을 모아놓은 공간입니다.
+          <h1 className="text-4xl font-bold text-slate-800 mb-4">자유 게시판</h1>
+          <p className="text-slate-600 text-lg">
+            자유롭게 의견을 나누는 공간입니다.
           </p>
         </div>
 
-        {/* 로딩 상태 */}
         {loading && (
-          <div className="text-center py-12">
-            <div className="text-gray-500 text-lg">게시글을 불러오는 중...</div>
-            <div className="text-gray-400 text-sm mt-2">loading: {loading.toString()}</div>
+          <div className="text-center py-16">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+            <div className="text-slate-700 text-lg font-medium">게시글을 불러오는 중...</div>
           </div>
         )}
 
-        {/* 에러 상태 */}
         {error && (
-          <div className="text-center py-12">
-            <div className="text-red-500 text-lg mb-2">{error}</div>
-            <button
-              onClick={refetch}
-              className="text-[#B8DCCC] hover:text-white transition"
-            >
-              다시 시도
-            </button>
+          <div className="text-center py-16">
+            <div className="bg-red-50 border border-red-200 rounded-xl p-8 inline-block">
+              <div className="text-red-700 text-lg font-medium mb-4">{error}</div>
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium"
+              >
+                다시 시도
+              </button>
+            </div>
           </div>
         )}
 
         {/* 검색 및 필터링 */}
         {!loading && !error && (
           <div className="bg-white rounded-lg p-6 mb-6">
-            <form onSubmit={handleSearchSubmit} className="space-y-4">
+            <form onSubmit={handleSearch} className="space-y-4">
               {/* 검색바 */}
               <div className="flex gap-4">
                 <div className="flex-1">
@@ -113,11 +216,11 @@ const BestBoard = () => {
               </div>
 
               {/* 초기화 버튼 */}
-              {hasAnyFilter && (
+              {(searchTerm || sortBy !== 'latest') && (
                 <div className="flex justify-end">
                   <button
                     type="button"
-                    onClick={resetAllFilters}
+                    onClick={clearSearch}
                     className="text-sm text-gray-500 hover:text-gray-700 transition"
                   >
                     초기화
@@ -143,11 +246,11 @@ const BestBoard = () => {
         {/* 검색 결과 표시 */}
         {!loading && !error && (
           <>
-            {totalPosts === 0 ? (
+            {filteredAndSortedPosts.length === 0 ? (
               <div className="text-center py-12">
                 <div className="text-gray-500 text-lg mb-2">검색 결과가 없습니다</div>
                 <button
-                  onClick={resetAllFilters}
+                  onClick={clearSearch}
                   className="text-[#B8DCCC] hover:text-white transition"
                 >
                   검색 조건 초기화
@@ -155,7 +258,7 @@ const BestBoard = () => {
               </div>
             ) : (
               <div className="mb-4 text-sm text-gray-300">
-                총 {totalPosts}개의 게시글 (페이지 {currentPage}/{totalPages})
+                총 {filteredAndSortedPosts.length}개의 게시글 (페이지 {currentPage}/{totalPages})
               </div>
             )}
 
@@ -176,7 +279,7 @@ const BestBoard = () => {
                         <CommentCount postId={post.id} />
                         <span>댓글</span>
                         <span>·</span>
-                        <span>👁️ {'viewCount' in post ? post.viewCount : ('views' in post ? (post as any).views : 0)} 조회</span>
+                        <span>👁️ {'views' in post ? (post as any).views : 0} 조회</span>
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
                         {post.createdAt}
@@ -193,7 +296,7 @@ const BestBoard = () => {
                 <div className="flex items-center space-x-2">
                   {/* 이전 페이지 */}
                   <button
-                    onClick={goToPreviousPage}
+                    onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
                     className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 transition text-black"
                   >
@@ -232,7 +335,7 @@ const BestBoard = () => {
 
                   {/* 다음 페이지 */}
                   <button
-                    onClick={goToNextPage}
+                    onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
                     className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 transition text-black"
                   >
@@ -242,13 +345,12 @@ const BestBoard = () => {
               </div>
             )}
 
-            {/* 뒤로가기 버튼 */}
             <div className="text-center mt-8">
               <button
                 onClick={() => navigate('/community')}
-                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+                className="px-6 py-3 bg-slate-600 text-white font-semibold rounded-lg hover:bg-slate-700 transition-colors shadow-sm"
               >
-                ← 커뮤니티로 돌아가기
+                커뮤니티로 돌아가기
               </button>
             </div>
           </>
@@ -258,4 +360,4 @@ const BestBoard = () => {
   )
 }
 
-export default BestBoard 
+export default FreeBoard 
