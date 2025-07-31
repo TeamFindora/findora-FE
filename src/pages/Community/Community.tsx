@@ -1,4 +1,3 @@
-import '../Home/Home.css'
 import { useNavigate } from 'react-router-dom'
 import { useState, useMemo } from 'react'
 
@@ -165,128 +164,106 @@ const Community = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white text-white">
-      <div className="text-center py-20 bg-zinc-100">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-3xl font-bold text-[#B8DCCC] mb-2">커뮤니티</h1>
-          <p className="text-gray-300 text-sm">
-            질문하고 나누는 자유로운 공간입니다.
-          </p>
-        </div>
-
-        {/* 검색 및 필터링 */}
-        <div className="bg-white rounded-lg p-6 mb-6">
-          <form onSubmit={handleSearch} className="space-y-4">
-            {/* 검색바 */}
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  placeholder="제목, 작성자로 검색..."
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#B8DCCC]"
-                />
-              </div>
-              <button
-                type="submit"
-                className="px-6 py-3 bg-[#B8DCCC] text-black font-semibold rounded-lg hover:bg-opacity-90 transition"
-              >
-                🔍 검색
-              </button>
-            </div>
-
-            {/* 정렬 옵션 */}
-            <div className="flex items-center justify-between">
-              <div></div> {/* 왼쪽 공간 */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-700 text-black">정렬:</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => handleSortChange(e.target.value)}
-                  className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#B8DCCC] text-black"
-                >
-                  {sortOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* 초기화 버튼 */}
-            {(searchTerm || sortBy !== 'latest') && (
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={clearSearch}
-                  className="text-sm text-gray-500 hover:text-gray-700 transition"
-                >
-                  초기화
-                </button>
-              </div>
-            )}
-          </form>
-        </div>
-
-        {/* 글쓰기 버튼 */}
-        <div className="text-right mb-6">
-          <button 
-            onClick={() => navigate('/community/write')}
-            className="bg-[#B8DCCC] text-black font-semibold px-4 py-2 rounded hover:bg-opacity-90 transition"
+    <div className="community-page min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 text-gray-800 py-12 px-4">
+      <div className="community-container max-w-6xl mx-auto">
+        {/* 검색창 */}
+        <div className="community-search-section mb-8 flex gap-2">
+          <div className="community-search-input-wrapper flex-1 relative">
+            <span className="community-search-icon absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={e => handleSearchChange(e.target.value)}
+              placeholder="제목, 작성자로 검색 (예: 연구실, 면접, 스터디...)"
+              className="community-search-input w-full pl-10 p-4 border border-gray-300 rounded-xl text-gray-800 bg-white shadow-lg focus:outline-none focus:ring-2 focus:ring-[#B8DCCC] focus:border-transparent"
+            />
+          </div>
+          <select
+            value={sortBy}
+            onChange={e => handleSortChange(e.target.value)}
+            className="community-sort-select px-4 py-4 border border-gray-300 rounded-xl text-gray-800 bg-white shadow-lg focus:outline-none focus:ring-2 focus:ring-[#B8DCCC] focus:border-transparent"
           >
-            ✍ 글쓰기
+            {sortOptions.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* 강조 섹션 - 커뮤니티 */}
+        <div className="community-hero-section bg-gradient-to-r from-[#B8DCCC] to-[#9BC5B3] rounded-xl p-6 mb-8 shadow-lg relative">
+          <div className="community-hero-content text-center">
+            <h1 className="community-hero-title text-2xl font-bold text-white">커뮤니티</h1>
+            <p className="community-hero-description text-white text-sm opacity-90 mt-2">
+              질문하고 나누는 자유로운 공간입니다
+            </p>
+          </div>
+          <button
+            onClick={() => navigate('/community/write')}
+            className="community-write-button absolute bottom-4 right-4 bg-white text-[#B8DCCC] px-4 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+          >
+            글쓰기
           </button>
         </div>
 
         {/* 검색 결과 표시 */}
         {filteredAndSortedPosts.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-gray-500 text-lg mb-2">검색 결과가 없습니다</div>
+          <div className="community-empty-state text-center text-gray-400 py-12 mb-8">
+            <div className="community-empty-icon-wrapper mb-4">
+              <span className="community-empty-icon text-6xl">🔍</span>
+            </div>
+            <div className="community-empty-text text-xl">검색 결과가 없습니다.</div>
             <button
               onClick={clearSearch}
-              className="text-[#B8DCCC] hover:text-white transition"
+              className="community-clear-search-button mt-4 text-[#B8DCCC] hover:text-[#9BC5B3] transition"
             >
               검색 조건 초기화
             </button>
           </div>
         ) : (
-          <div className="mb-4 text-sm text-gray-300">
+          <div className="community-results-info mb-4 text-sm text-gray-600">
             총 {filteredAndSortedPosts.length}개의 게시글 (페이지 {currentPage}/{totalPages})
           </div>
         )}
 
         {/* 상단 실시간 인기 게시글 */}
-        <div className="mb-12">
-          <h2 className="text-xl font-bold text-[#B8DCCC] mb-4">실시간 인기게시글</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="community-popular-section mb-12">
+          <h2 className="community-popular-title text-xl font-bold text-[#B8DCCC] mb-4">실시간 인기게시글</h2>
+          <div className="community-popular-grid grid grid-cols-1 md:grid-cols-3 gap-6">
             {popularPosts.map(post => (
               <div
                 key={post.id}
-                className="bg-white text-black rounded-lg px-6 py-4 shadow hover:-translate-y-1 transition cursor-pointer hover:shadow-lg"
+                className="community-popular-post bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 cursor-pointer"
                 onClick={() => navigate(`/community/post/${post.id}`)}
               >
-                <h3 className="text-lg font-semibold text-[#B8DCCC] mb-2">{post.title}</h3>
-                <div className="text-sm text-gray-600 mb-1">작성자: {post.writer}</div>
-                <div className="text-xs text-gray-500 mb-1">{post.createdAt}</div>
-                <div className="text-xs text-gray-700">조회수: {post.views} · 댓글: {post.comments}</div>
+                <h3 className="community-popular-post-title text-lg font-semibold text-[#B8DCCC] mb-2">{post.title}</h3>
+                <div className="community-popular-post-writer text-sm text-gray-600 mb-1">작성자: {post.writer}</div>
+                <div className="community-popular-post-date text-xs text-gray-500 mb-1">{post.createdAt}</div>
+                <div className="community-popular-post-stats text-xs text-gray-700">조회수: {post.views} · 댓글: {post.comments}</div>
               </div>
             ))}
           </div>
         </div>
 
         {/* 게시판 탭 */}
-        <div className="flex gap-2 mb-6">
+        <div className="community-tabs-section flex gap-2 mb-6">
           <button
-            className={`px-4 py-2 rounded font-semibold transition ${activeTab === 'free' ? 'bg-[#B8DCCC] text-black' : 'bg-gray-600 text-white hover:bg-gray-500'}`}
+            className={`community-tab-button px-4 py-2 rounded-xl font-semibold transition ${
+              activeTab === 'free' 
+                ? 'bg-[#B8DCCC] text-black shadow-lg' 
+                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+            }`}
             onClick={() => setActiveTab('free')}
           >
             자유 게시판
           </button>
           <button
-            className={`px-4 py-2 rounded font-semibold transition ${activeTab === 'best' ? 'bg-[#B8DCCC] text-black' : 'bg-gray-600 text-white hover:bg-gray-500'}`}
+            className={`community-tab-button px-4 py-2 rounded-xl font-semibold transition ${
+              activeTab === 'best' 
+                ? 'bg-[#B8DCCC] text-black shadow-lg' 
+                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+            }`}
             onClick={() => setActiveTab('best')}
           >
             베스트 게시판
@@ -294,20 +271,20 @@ const Community = () => {
         </div>
 
         {/* 게시글 목록 (탭에 따라 다르게) */}
-        <div className="space-y-4">
+        <div className="community-posts-section space-y-4 mb-8">
           {(activeTab === 'free' ? currentPosts : bestBoardPosts.slice(startIndex, endIndex)).map(post => (
             <div
               key={post.id}
-              className="bg-white text-black rounded-lg px-6 py-4 shadow hover:-translate-y-1 transition cursor-pointer hover:shadow-lg"
+              className="community-post-card bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 cursor-pointer"
               onClick={() => navigate(`/community/post/${post.id}`)}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-[#B8DCCC]">{post.title}</h3>
-                  <div className="text-sm text-gray-600 mt-1">
-                    작성자: {post.writer} · 💬 {post.comments} 댓글 · 👁️ {post.views} 조회
+              <div className="community-post-content flex items-start justify-between">
+                <div className="community-post-info flex-1">
+                  <h3 className="community-post-title text-lg font-semibold text-[#B8DCCC] mb-2">{post.title}</h3>
+                  <div className="community-post-meta text-sm text-gray-600 mb-1">
+                    작성자: {post.writer} · <span className="community-comment-icon">💬</span> {post.comments} 댓글 · <span className="community-view-icon">👁️</span> {post.views} 조회
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className="community-post-date text-xs text-gray-500">
                     {post.createdAt}
                   </div>
                 </div>
@@ -318,13 +295,13 @@ const Community = () => {
 
         {/* 페이지네이션 */}
         {totalPages > 1 && (
-          <div className="flex justify-center mt-8">
-            <div className="flex items-center space-x-2">
+          <div className="community-pagination flex justify-center mt-8">
+            <div className="community-pagination-container flex items-center space-x-2">
               {/* 이전 페이지 */}
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 transition"
+                className="community-pagination-button community-prev-button px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 transition"
               >
                 이전
               </button>
@@ -341,7 +318,7 @@ const Community = () => {
                     <button
                       key={page}
                       onClick={() => handlePageChange(page)}
-                      className={`px-3 py-2 rounded-lg text-sm transition ${
+                      className={`community-page-button px-3 py-2 rounded-lg text-sm transition ${
                         currentPage === page
                           ? 'bg-[#B8DCCC] text-black font-semibold'
                           : 'border border-gray-300 hover:bg-gray-200'
@@ -354,7 +331,7 @@ const Community = () => {
                   page === currentPage - 3 ||
                   page === currentPage + 3
                 ) {
-                  return <span key={page} className="px-2 text-gray-500">...</span>
+                  return <span key={page} className="community-pagination-ellipsis px-2 text-gray-500">...</span>
                 }
                 return null
               })}
@@ -363,7 +340,7 @@ const Community = () => {
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 transition"
+                className="community-pagination-button community-next-button px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 transition"
               >
                 다음
               </button>
