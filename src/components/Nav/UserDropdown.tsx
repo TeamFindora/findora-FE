@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { useMessageCount } from '../../hooks/messaging/useMessageCount'
 
 interface UserDropdownProps {
   user: {
@@ -11,6 +12,7 @@ interface UserDropdownProps {
 const UserDropdown = ({ user, onMessageClick }: UserDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const { remainingCount } = useMessageCount()
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -62,6 +64,11 @@ const UserDropdown = ({ user, onMessageClick }: UserDropdownProps) => {
           >
             <span className="dropdown-icon">💬</span>
             쪽지함
+            {remainingCount > 0 && (
+              <span className="message-count-badge">
+                {remainingCount}
+              </span>
+            )}
           </button>
         </div>
       )}

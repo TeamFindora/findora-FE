@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import './Footer.css'
 
 const Footer = () => {
@@ -47,7 +48,7 @@ const Footer = () => {
             <div className="footer-links">
               <a href="#privacy">개인정보처리방침</a>
               <a href="#terms">이용약관</a>
-              <a href="#cookies">쿠키정책</a>
+              <Link to="/admin">쿠키정책</Link>
             </div>
           </div>
         </div>

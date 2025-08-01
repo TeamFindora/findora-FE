@@ -1,112 +1,31 @@
 import { useState, useEffect } from 'react'
+import { messagesApi, messageAuthApi, MessageResponseDto, MessageThread } from '../../api/messages'
+import { getCurrentUser } from '../../api/auth'
 
-export interface Message {
-  id: string
-  senderId: string
-  senderNickname: string
-  receiverId: string
-  receiverNickname: string
-  content: string
-  isRead: boolean
-  createdAt: string
-  updatedAt?: string
+// 기존 Message 인터페이스를 MessageResponseDto와 호환되도록 변경
+export interface Message extends MessageResponseDto {
+  // 추가 필드가 필요하면 여기에 정의
 }
 
-export interface MessageThread {
-  id: string
-  otherUser: {
-    id: string
-    nickname: string
-  }
-  lastMessage: Message
-  unreadCount: number
-  messages: Message[]
-}
+// MessageThread는 api/messages.ts에서 import하므로 중복 제거
 
 export const useMessages = () => {
   const [threads, setThreads] = useState<MessageThread[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // 임시 목 데이터
-  const mockThreads: MessageThread[] = [
-    {
-      id: '1',
-      otherUser: { id: '2', nickname: '김학생' },
-      lastMessage: {
-        id: '1',
-        senderId: '2',
-        senderNickname: '김학생',
-        receiverId: '1',
-        receiverNickname: '현재사용자',
-        content: '안녕하세요! 질문이 있어서 연락드렸습니다.',
-        isRead: false,
-        createdAt: '2024-01-15 14:30:00'
-      },
-      unreadCount: 2,
-      messages: [
-        {
-          id: '1',
-          senderId: '2',
-          senderNickname: '김학생',
-          receiverId: '1',
-          receiverNickname: '현재사용자',
-          content: '안녕하세요! 질문이 있어서 연락드렸습니다.',
-          isRead: false,
-          createdAt: '2024-01-15 14:30:00'
-        },
-        {
-          id: '2',
-          senderId: '2',
-          senderNickname: '김학생',
-          receiverId: '1',
-          receiverNickname: '현재사용자',
-          content: '혹시 시간 있으실 때 답변 부탁드립니다!',
-          isRead: false,
-          createdAt: '2024-01-15 14:35:00'
-        }
-      ]
-    },
-    {
-      id: '2',
-      otherUser: { id: '3', nickname: '박교수' },
-      lastMessage: {
-        id: '3',
-        senderId: '1',
-        senderNickname: '현재사용자',
-        receiverId: '3',
-        receiverNickname: '박교수',
-        content: '네, 알겠습니다. 감사합니다!',
-        isRead: true,
-        createdAt: '2024-01-14 16:20:00'
-      },
-      unreadCount: 0,
-      messages: [
-        {
-          id: '3',
-          senderId: '1',
-          senderNickname: '현재사용자',
-          receiverId: '3',
-          receiverNickname: '박교수',
-          content: '네, 알겠습니다. 감사합니다!',
-          isRead: true,
-          createdAt: '2024-01-14 16:20:00'
-        }
-      ]
-    }
-  ]
-
   useEffect(() => {
-    // 실제 API 호출 시뮬레이션
     const fetchMessages = async () => {
       try {
         setLoading(true)
-        // API 호출 대신 목 데이터 사용
-        await new Promise(resolve => setTimeout(resolve, 500))
-        setThreads(mockThreads)
         setError(null)
+        
+        // 실제 API 호출로 메시지 스레드 생성
+        const messageThreads = await messagesApi.createMessageThreads()
+        setThreads(messageThreads)
       } catch (err) {
-        setError('메시지를 불러오는데 실패했습니다.')
+        console.error('메시지 불러오기 실패:', err)
+        setError(err instanceof Error ? err.message : '메시지를 불러오는데 실패했습니다.')
       } finally {
         setLoading(false)
       }
@@ -117,65 +36,49 @@ export const useMessages = () => {
 
   const sendMessage = async (receiverId: string, content: string) => {
     try {
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        senderId: '1', // 현재 사용자 ID
-        senderNickname: '현재사용자',
-        receiverId,
-        receiverNickname: threads.find(t => t.otherUser.id === receiverId)?.otherUser.nickname || '',
-        content,
-        isRead: false,
-        createdAt: new Date().toLocaleString()
+      const currentUser = getCurrentUser()
+      if (!currentUser) {
+        throw new Error('로그인이 필요합니다.')
       }
 
-      // 기존 스레드 찾기 또는 새 스레드 생성
-      setThreads(prevThreads => {
-        const existingThreadIndex = prevThreads.findIndex(t => t.otherUser.id === receiverId)
-        
-        if (existingThreadIndex >= 0) {
-          // 기존 스레드에 메시지 추가
-          const updatedThreads = [...prevThreads]
-          updatedThreads[existingThreadIndex] = {
-            ...updatedThreads[existingThreadIndex],
-            lastMessage: newMessage,
-            messages: [...updatedThreads[existingThreadIndex].messages, newMessage]
-          }
-          return updatedThreads
-        } else {
-          // 새 스레드 생성
-          const newThread: MessageThread = {
-            id: Date.now().toString(),
-            otherUser: { id: receiverId, nickname: newMessage.receiverNickname },
-            lastMessage: newMessage,
-            unreadCount: 0,
-            messages: [newMessage]
-          }
-          return [newThread, ...prevThreads]
-        }
+      // 실제 API 호출로 메시지 전송 (권한 체크는 useMessageReply에서 이미 처리됨)
+      const sentMessage = await messagesApi.sendMessage({
+        receiverId: parseInt(receiverId),
+        content
       })
 
-      return newMessage
+      // 메시지 전송 후 스레드 목록 다시 불러오기
+      const updatedThreads = await messagesApi.createMessageThreads()
+      setThreads(updatedThreads)
+
+      return sentMessage
     } catch (err) {
-      throw new Error('메시지 전송에 실패했습니다.')
+      console.error('메시지 전송 실패:', err)
+      throw new Error(err instanceof Error ? err.message : '메시지 전송에 실패했습니다.')
     }
   }
 
   const markAsRead = async (threadId: string) => {
     try {
-      setThreads(prevThreads =>
-        prevThreads.map(thread =>
-          thread.id === threadId
-            ? {
-                ...thread,
-                unreadCount: 0,
-                messages: thread.messages.map(message => ({
-                  ...message,
-                  isRead: true
-                }))
-              }
-            : thread
-        )
+      const thread = threads.find(t => t.id === threadId)
+      if (!thread) return
+
+      const currentUser = getCurrentUser()
+      if (!currentUser) return
+
+      // 읽지 않은 메시지들에 대해 읽음 처리 API 호출
+      const unreadMessages = thread.messages.filter(
+        msg => msg.receiverId === currentUser.userId && !msg.isRead
       )
+
+      // 각 읽지 않은 메시지에 대해 읽음 처리
+      await Promise.all(
+        unreadMessages.map(msg => messagesApi.markAsRead(msg.id))
+      )
+
+      // 스레드 목록 다시 불러오기
+      const updatedThreads = await messagesApi.createMessageThreads()
+      setThreads(updatedThreads)
     } catch (err) {
       console.error('메시지 읽음 처리 실패:', err)
     }
@@ -183,8 +86,19 @@ export const useMessages = () => {
 
   const deleteThread = async (threadId: string) => {
     try {
-      setThreads(prevThreads => prevThreads.filter(thread => thread.id !== threadId))
+      const thread = threads.find(t => t.id === threadId)
+      if (!thread) return
+
+      // 스레드의 모든 메시지 삭제
+      await Promise.all(
+        thread.messages.map(msg => messagesApi.deleteMessage(msg.id))
+      )
+
+      // 스레드 목록 다시 불러오기
+      const updatedThreads = await messagesApi.createMessageThreads()
+      setThreads(updatedThreads)
     } catch (err) {
+      console.error('대화 삭제 실패:', err)
       throw new Error('대화 삭제에 실패했습니다.')
     }
   }
@@ -201,12 +115,48 @@ export const useMessages = () => {
     markAsRead,
     deleteThread,
     getTotalUnreadCount,
-    refetch: () => {
-      setLoading(true)
-      setTimeout(() => {
-        setThreads(mockThreads)
+    refetch: async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const messageThreads = await messagesApi.createMessageThreads()
+        setThreads(messageThreads)
+      } catch (err) {
+        console.error('메시지 다시 불러오기 실패:', err)
+        setError(err instanceof Error ? err.message : '메시지를 불러오는데 실패했습니다.')
+      } finally {
         setLoading(false)
-      }, 500)
+      }
+    },
+    
+    // 권한 체크 없이 순수하게 메시지만 전송하는 함수 (useMessageReply용)
+    sendMessageDirectly: async (receiverId: string, content: string) => {
+      try {
+        const currentUser = getCurrentUser()
+        if (!currentUser) {
+          throw new Error('로그인이 필요합니다.')
+        }
+
+        // 권한 체크 없이 직접 API 호출
+        const sentMessage = await messagesApi.sendMessage({
+          receiverId: parseInt(receiverId),
+          content
+        })
+
+        // 메시지 전송 후 스레드 목록 다시 불러오기 (즉시 업데이트)
+        try {
+          const updatedThreads = await messagesApi.createMessageThreads()
+          setThreads(updatedThreads)
+        } catch (refreshError) {
+          console.error('스레드 새로고침 실패:', refreshError)
+          // 메시지 전송은 성공했으므로 에러를 던지지 않음
+        }
+
+        return sentMessage
+      } catch (err) {
+        console.error('메시지 전송 실패:', err)
+        throw new Error(err instanceof Error ? err.message : '메시지 전송에 실패했습니다.')
+      }
     }
   }
 }

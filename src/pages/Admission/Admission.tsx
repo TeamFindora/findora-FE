@@ -1,5 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { postsApi } from '../../api/posts'
+import MessageSidebar from '../../components/Messaging/MessageSidebar'
 
 const mockTips = [
   {
@@ -68,16 +70,87 @@ const mockAdmissions = [
 
 const Admission = () => {
   const navigate = useNavigate()
-  const [selectedTip, setSelectedTip] = useState<typeof mockTips[0] | null>(null)
+  const [selectedTip, setSelectedTip] = useState<any>(null)
   const [paidTips, setPaidTips] = useState<number[]>([])
   const [search, setSearch] = useState('')
+  const [admissionPosts, setAdmissionPosts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [isMessageSidebarOpen, setIsMessageSidebarOpen] = useState(false)
+  const [selectedAuthorUserId, setSelectedAuthorUserId] = useState<string | null>(null)
+  const [selectedAuthorNickname, setSelectedAuthorNickname] = useState<string | null>(null)
+
+  // 백엔드 API에서 입시관 게시글들 불러오기 (categories 3번)
+  useEffect(() => {
+    const fetchAdmissionPosts = async () => {
+      try {
+        setLoading(true)
+        const posts = await postsApi.getAllPosts()
+        
+        console.log('입시관 페이지 - 전체 게시글 수:', posts.length)
+        console.log('입시관 페이지 - 전체 게시글 카테고리들:', posts.map(p => ({
+          id: p.id,
+          title: p.title,
+          categoryId: p.category?.id || p.categoryId,
+          category: p.category
+        })))
+        
+        // categories 3번 (입시관) 게시글만 필터링하고 필요한 형태로 변환
+        // API 응답에서 categoryId는 post.category.id 형태로 제공됨
+        const admissionOnlyPosts = posts
+          .filter(post => {
+            const categoryId = post.category?.id || post.categoryId
+            console.log('입시관 페이지 - 게시글 카테고리 확인:', categoryId, post.title)
+            return categoryId === 3
+          })
+          .map(post => {
+            // 내용에서 학교, 전공, 합격년도, 만족도 추출
+            const content = post.content
+            const schoolMatch = content.match(/🎓 \*\*학교\*\*: (.+)/)
+            const majorMatch = content.match(/📚 \*\*전공\*\*: (.+)/)
+            const yearMatch = content.match(/📅 \*\*합격년도\*\*: (.+)년/)
+            const ratingMatch = content.match(/⭐ \*\*만족도\*\*: (.+)\/5/)
+            
+            // 실제 내용 부분 추출 (--- 이후)
+            const actualContent = content.split('---')[1]?.trim() || content
+            
+            return {
+              id: post.id,
+              title: post.title,
+              author: post.userNickname || '익명',
+              userId: post.userId, // 쪽지 기능을 위한 작성자 userId 추가
+              preview: actualContent.substring(0, 100) + (actualContent.length > 100 ? '...' : ''),
+              content: actualContent,
+              paid: false,
+              price: 3000,
+              school: schoolMatch ? schoolMatch[1].trim() : '미분류',
+              major: majorMatch ? majorMatch[1].trim() : '미분류',
+              year: yearMatch ? yearMatch[1].trim() : '2024',
+              views: 0, // 추후 구현
+              rating: ratingMatch ? parseFloat(ratingMatch[1]) : 5,
+              createdAt: post.createdAt
+            }
+          })
+        
+        console.log('입시관 페이지 - 필터링된 게시글 수:', admissionOnlyPosts.length)
+        setAdmissionPosts(admissionOnlyPosts)
+      } catch (error) {
+        console.error('입시관 게시글 불러오기 실패:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchAdmissionPosts()
+  }, [])
 
   // 검색 필터링
+  // DB에서 불러온 게시글이 있으면 목업 데이터는 제외
+  const allTips = admissionPosts.length > 0 ? admissionPosts : [...mockTips, ...admissionPosts]
   const filteredTips = useMemo(() =>
-    mockTips.filter(tip =>
+    allTips.filter(tip =>
       [tip.title, tip.preview, tip.content, tip.author, tip.school, tip.major]
         .some(field => field.toLowerCase().includes(search.toLowerCase()))
-    ), [search]
+    ), [search, admissionPosts]
   )
 
   const filteredAdmissions = useMemo(() =>
@@ -87,10 +160,25 @@ const Admission = () => {
     ), [search]
   )
 
-  // 결제 시
-  const handlePay = (id: number) => {
-    setPaidTips([...paidTips, id])
-    alert('결제가 완료되었습니다! 전체 내용을 확인하고 질문할 수 있습니다.')
+  // 1:1 질문하기 버튼 클릭 시 쪽지 사이드바 열기
+  const handlePay = (tip: any) => {
+    if (!tip.userId) {
+      alert('작성자 정보를 찾을 수 없습니다.')
+      return
+    }
+    
+    // 쪽지 사이드바 열기
+    setSelectedAuthorUserId(tip.userId.toString())
+    setSelectedAuthorNickname(tip.author)
+    setIsMessageSidebarOpen(true)
+    setSelectedTip(null) // 모달 닫기
+  }
+
+  // 쪽지 사이드바 닫기
+  const handleCloseMessageSidebar = () => {
+    setIsMessageSidebarOpen(false)
+    setSelectedAuthorUserId(null)
+    setSelectedAuthorNickname(null)
   }
 
   return (
@@ -116,7 +204,7 @@ const Admission = () => {
             </p>
           </div>
           <button
-            onClick={() => navigate('/admission/verify')}
+            onClick={() => navigate('/admission/write')}
             className="absolute bottom-4 right-4 bg-white text-[#B8DCCC] px-4 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105"
           >
             ✨ 인증하고 수강후기 작성하기
@@ -125,7 +213,12 @@ const Admission = () => {
 
         {/* 합격자 후기/꿀팁 카드 그리드 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 mb-16">
-          {filteredTips.length === 0 ? (
+          {loading ? (
+            <div className="col-span-2 text-center text-gray-400 py-12">
+              <div className="text-6xl mb-4">⏳</div>
+              <div className="text-xl">합격수기를 불러오는 중...</div>
+            </div>
+          ) : filteredTips.length === 0 ? (
             <div className="col-span-2 text-center text-gray-400 py-12">
               <div className="text-6xl mb-4">🔍</div>
               <div className="text-xl">검색 결과가 없습니다.</div>
@@ -217,7 +310,7 @@ const Admission = () => {
                         <div className="text-sm text-gray-600 mb-4">전체 내용 + 1:1 질문 기능</div>
                         <button
                           className="bg-gradient-to-r from-[#B8DCCC] to-[#9BC5B3] text-black px-8 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                          onClick={() => handlePay(selectedTip.id)}
+                          onClick={() => handlePay(selectedTip)}
                         >
                           💬 1:1 질문하기
                         </button>
@@ -276,6 +369,14 @@ const Admission = () => {
           </div>
         </div>
       </div>
+
+      {/* 쪽지 사이드바 */}
+      <MessageSidebar 
+        isOpen={isMessageSidebarOpen} 
+        onClose={handleCloseMessageSidebar}
+        targetUserId={selectedAuthorUserId}
+        authorNickname={selectedAuthorNickname}
+      />
     </div>
   )
 }

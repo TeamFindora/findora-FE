@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { isAuthenticated } from '../../api/auth'
-import { postsApi } from '../../api/posts'
+import { isAuthenticated, getCurrentUser } from '../../api/auth'
+import { postsApi, CATEGORIES } from '../../api/posts'
 
 interface UsePostFormOptions {
   mode: 'create' | 'edit'
@@ -65,10 +65,18 @@ export const usePostForm = ({
       setSubmitting(true)
       
       if (mode === 'create') {
+        const currentUser = getCurrentUser()
+        if (!currentUser || !currentUser.userId) {
+          alert('사용자 정보를 찾을 수 없습니다.')
+          return
+        }
+        
         console.log('게시글 작성 시작:', { title: title.trim(), content: content.trim() })
         await postsApi.createPost({
           title: title.trim(),
-          content: content.trim()
+          content: content.trim(),
+          categoryId: CATEGORIES.GENERAL,
+          userId: currentUser.userId
         })
         console.log('게시글 작성 완료')
         alert('게시글이 작성되었습니다.')

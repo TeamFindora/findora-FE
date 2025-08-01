@@ -9,6 +9,8 @@ import FreeBoard from './pages/Community/FreeBoard'
 import BestBoard from './pages/Community/BestBoard'
 import BookmarkBoard from './pages/Community/BookmarkBoard'
 import Verify from './pages/Admission/verify'
+import AdmissionWrite from './pages/Admission/Write'
+import AdminPage from './pages/AdminPage'
 import './App.css'
 
 // 헤더/푸터가 있는 레이아웃 컴포넌트
@@ -54,6 +56,18 @@ function App() {
           <Layout>
             <Verify />
           </Layout>
+        } 
+      />
+
+      {/* 입시관 글쓰기 */}
+      <Route 
+        path="/admission/write" 
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <AdmissionWrite />
+            </Layout>
+          </ProtectedRoute>
         } 
       />
 
@@ -155,6 +169,16 @@ function App() {
         element={
           <ProtectedRoute>
             <Profile />
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* 관리자 페이지 - 로그인 필요 */}
+      <Route 
+        path="/admin" 
+        element={
+          <ProtectedRoute>
+            <AdminPage />
           </ProtectedRoute>
         } 
       />

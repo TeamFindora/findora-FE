@@ -1,16 +1,20 @@
 import { useEffect, useRef } from 'react'
 import MessageReply from './MessageReply'
 import { MessageThread as MessageThreadType, Message } from '../../hooks/messaging/useMessages'
+import { getCurrentUser } from '../../api/auth'
 
 interface MessageThreadProps {
   thread: MessageThreadType
   onSendMessage: (receiverId: string, content: string) => Promise<void>
   onBack: () => void
+  canSendMessage?: boolean
+  remainingCount?: number
 }
 
-const MessageThread = ({ thread, onSendMessage, onBack }: MessageThreadProps) => {
+const MessageThread = ({ thread, onSendMessage, onBack, canSendMessage = true, remainingCount = 0 }: MessageThreadProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const currentUserId = '1' // 실제로는 현재 로그인한 사용자 ID
+  const currentUser = getCurrentUser()
+  const currentUserId = currentUser?.userId
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -43,7 +47,7 @@ const MessageThread = ({ thread, onSendMessage, onBack }: MessageThreadProps) =>
           <p className="message-text">{message.content}</p>
           <div className="message-meta">
             <span className="message-time">
-              {formatMessageTime(message.createdAt)}
+              {formatMessageTime(message.sentAt)}
             </span>
             {isMyMessage && (
               <span className={`read-status ${message.isRead ? 'read' : 'unread'}`}>
@@ -60,7 +64,7 @@ const MessageThread = ({ thread, onSendMessage, onBack }: MessageThreadProps) =>
     const groups: { [date: string]: Message[] } = {}
     
     messages.forEach(message => {
-      const date = new Date(message.createdAt).toDateString()
+      const date = new Date(message.sentAt).toDateString()
       if (!groups[date]) {
         groups[date] = []
       }
@@ -90,27 +94,42 @@ const MessageThread = ({ thread, onSendMessage, onBack }: MessageThreadProps) =>
   }
 
   const messageGroups = groupMessagesByDate(thread.messages)
+  const isNewThread = thread.messages.length === 0
 
   return (
     <div className="message-thread">
       {/* 메시지 목록 */}
       <div className="messages-container">
-        {Object.entries(messageGroups).map(([date, messages]) => (
-          <div key={date} className="message-group">
-            <div className="date-divider">
-              <span className="date-text">{formatDateHeader(date)}</span>
-            </div>
-            {messages.map(renderMessage)}
+        {isNewThread ? (
+          <div className="new-conversation-state">
+            <div className="new-conversation-icon">💬</div>
+            <h4 className="new-conversation-title">
+              {thread.otherUser.nickname}님과의 첫 대화
+            </h4>
+            <p className="new-conversation-description">
+              첫 메시지를 보내서 대화를 시작해보세요!
+            </p>
           </div>
-        ))}
+        ) : (
+          Object.entries(messageGroups).map(([date, messages]) => (
+            <div key={date} className="message-group">
+              <div className="date-divider">
+                <span className="date-text">{formatDateHeader(date)}</span>
+              </div>
+              {messages.map(renderMessage)}
+            </div>
+          ))
+        )}
         <div ref={messagesEndRef} />
       </div>
 
       {/* 답장 폼 */}
       <MessageReply
-        receiverId={thread.otherUser.id}
+        receiverId={thread.otherUser.id.toString()}
         receiverNickname={thread.otherUser.nickname}
         onSendMessage={onSendMessage}
+        canSendMessage={canSendMessage}
+        remainingCount={remainingCount}
       />
     </div>
   )
