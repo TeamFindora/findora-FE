@@ -198,7 +198,7 @@ const Admission = () => {
         {/* 강조 섹션 - 합격자 후기/꿀팁 */}
         <div className="bg-gradient-to-r from-[#B8DCCC] to-[#9BC5B3] rounded-xl p-6 mb-8 shadow-lg relative">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-white">🎓 해외 대학원 합격자 후기/꿀팁</h1>
+            <h1 className="text-2xl font-bold text-white">해외 대학원 합격자 후기/꿀팁</h1>
             <p className="text-white text-sm opacity-90 mt-2">
               실제 합격자들의 생생한 경험담과 꿀팁을 만나보세요
             </p>
@@ -207,7 +207,7 @@ const Admission = () => {
             onClick={() => navigate('/admission/write')}
             className="absolute bottom-4 right-4 bg-white text-[#B8DCCC] px-4 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105"
           >
-            ✨ 인증하고 수강후기 작성하기
+            합격자 인증
           </button>
         </div>
 
@@ -330,7 +330,7 @@ const Admission = () => {
                     rows={4}
                   />
                   <button className="bg-[#B8DCCC] text-black px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-300">
-                    📤 질문 보내기
+                    질문 보내기
                   </button>
                 </div>
               )}
@@ -340,7 +340,7 @@ const Admission = () => {
 
         {/* 하단: 해외 대학원 입시 정보 */}
         <div className="bg-white rounded-2xl p-8 shadow-xl">
-          <h2 className="text-2xl font-bold text-[#B8DCCC] mb-6">📋 해외 대학원 입시 정보</h2>
+          <h2 className="text-2xl font-bold text-[#B8DCCC] mb-6">해외 대학원 입시 정보</h2>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>

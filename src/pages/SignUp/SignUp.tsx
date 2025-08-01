@@ -309,20 +309,20 @@ const SignUp = () => {
     <div className="signup-container">
       <div className="signup-form">
         <div className="signup-header">
-          <h2>회원가입</h2>
+          <h2 className="signup-title">회원가입</h2>
           <button className="close-button" onClick={handleClose}>
             ✕
           </button>
         </div>
         
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="signup-form-content">
           {/* 닉네임 */}
-          <div className="form-group">
-            <label htmlFor="nickname">닉네임</label>
-            <span className={`message-text ${validation.nickname.status}`}>
+          <div className="form-group signup-nickname-group">
+            <label htmlFor="nickname" className="signup-label">닉네임</label>
+            <span className={`message-text signup-message ${validation.nickname.status}`}>
               {validation.nickname.message}
             </span>
-            <div className="input-group">
+            <div className="input-group signup-input-group">
               <input 
                 type="text" 
                 id="nickname" 
@@ -330,11 +330,12 @@ const SignUp = () => {
                 placeholder="haneul"
                 value={formData.nickname}
                 onChange={(e) => handleInputChange('nickname', e.target.value)}
+                className="signup-input"
                 required 
               />
               <button 
                 type="button" 
-                className="check-button"
+                className="check-button signup-check-button"
                 onClick={handleNicknameCheck}
                 disabled={loading.nickname}
               >
@@ -344,12 +345,12 @@ const SignUp = () => {
           </div>
 
           {/* 아이디 */}
-          <div className="form-group">
-            <label htmlFor="username">아이디</label>
-            <span className={`message-text ${validation.username.status}`}>
+          <div className="form-group signup-username-group">
+            <label htmlFor="username" className="signup-label">아이디</label>
+            <span className={`message-text signup-message ${validation.username.status}`}>
               {validation.username.message}
             </span>
-            <div className="input-group">
+            <div className="input-group signup-input-group">
               <input 
                 type="text" 
                 id="username" 
@@ -357,11 +358,12 @@ const SignUp = () => {
                 placeholder="haneul1234"
                 value={formData.username}
                 onChange={(e) => handleInputChange('username', e.target.value)}
+                className="signup-input"
                 required 
               />
               <button 
                 type="button" 
-                className="check-button"
+                className="check-button signup-check-button"
                 onClick={handleUsernameCheck}
                 disabled={loading.username}
               >
@@ -371,12 +373,12 @@ const SignUp = () => {
           </div>
 
           {/* 비밀번호 */}
-          <div className="form-group">
-            <label htmlFor="password">비밀번호</label>
-            <span className={`message-text ${passwordValidation.status}`}>
+          <div className="form-group signup-password-group">
+            <label htmlFor="password" className="signup-label">비밀번호</label>
+            <span className={`message-text signup-message ${passwordValidation.status}`}>
               {passwordValidation.message || '영문, 숫자 포함 8글자 이상의 비밀번호를 입력해주세요.'}
             </span>
-            <div className="input-group password-group">
+            <div className="input-group password-group signup-input-group">
               <input 
                 type={showPassword ? "text" : "password"}
                 id="password" 
@@ -384,25 +386,26 @@ const SignUp = () => {
                 placeholder="••••••••••••"
                 value={formData.password}
                 onChange={(e) => handleInputChange('password', e.target.value)}
+                className="signup-input"
                 required 
               />
               <button 
                 type="button" 
-                className="eye-button"
+                className="eye-button signup-eye-button"
                 onClick={togglePasswordVisibility}
               >
-                👁
+                <span className="signup-eye-icon">👁️</span>
               </button>
             </div>
           </div>
 
           {/* 비밀번호 재입력 */}
-          <div className="form-group">
-            <label htmlFor="confirmPassword">비밀번호 재입력</label>
-            <span className={`message-text ${confirmPasswordValidation.status}`}>
+          <div className="form-group signup-confirm-password-group">
+            <label htmlFor="confirmPassword" className="signup-label">비밀번호 재입력</label>
+            <span className={`message-text signup-message ${confirmPasswordValidation.status}`}>
               {confirmPasswordValidation.message}
             </span>
-            <div className="input-group password-group">
+            <div className="input-group password-group signup-input-group">
               <input 
                 type={showConfirmPassword ? "text" : "password"}
                 id="confirmPassword" 
@@ -410,25 +413,26 @@ const SignUp = () => {
                 placeholder="••••••••••••"
                 value={formData.confirmPassword}
                 onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                className="signup-input"
                 required 
               />
               <button 
                 type="button" 
-                className="eye-button"
+                className="eye-button signup-eye-button"
                 onClick={toggleConfirmPasswordVisibility}
               >
-                👁
+                <span className="signup-eye-icon">👁️</span>
               </button>
             </div>
           </div>
 
           {/* 이메일 */}
-          <div className="form-group">
-            <label htmlFor="email">이메일</label>
-            <span className={`message-text ${validation.email.status}`}>
+          <div className="form-group signup-email-group">
+            <label htmlFor="email" className="signup-label">이메일</label>
+            <span className={`message-text signup-message ${validation.email.status}`}>
               {validation.email.message || '연락이 가능합니다.'}
             </span>
-            <div className="input-group">
+            <div className="input-group signup-input-group">
               <input 
                 type="email" 
                 id="email" 
@@ -436,11 +440,12 @@ const SignUp = () => {
                 placeholder="you@example.com"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
+                className="signup-input"
                 required 
               />
               <button 
                 type="button" 
-                className="verify-button"
+                className="verify-button signup-verify-button"
                 onClick={handleEmailVerification}
                 disabled={validation.email.codeSent}
               >
@@ -451,19 +456,19 @@ const SignUp = () => {
 
           {/* 인증번호 */}
           {validation.email.codeSent && (
-            <div className="form-group">
-              <div className="input-group">
+            <div className="form-group signup-verification-group">
+              <div className="input-group signup-input-group">
                 <input 
                   type="text" 
                   name="verificationCode" 
                   placeholder="인증번호 입력"
-                  className="verification-input"
+                  className="verification-input signup-verification-input"
                   value={formData.verificationCode}
                   onChange={(e) => handleInputChange('verificationCode', e.target.value)}
                 />
                 <button 
                   type="button" 
-                  className="verify-button"
+                  className="verify-button signup-verify-button"
                   onClick={handleVerifyCode}
                   disabled={loading.verification}
                 >
@@ -474,15 +479,16 @@ const SignUp = () => {
           )}
 
           {/* 약관 동의 */}
-          <div className="form-group checkbox-group">
-            <label className="checkbox-label">
+          <div className="form-group checkbox-group signup-terms-group">
+            <label className="checkbox-label signup-checkbox-label">
               <input 
                 type="checkbox" 
                 checked={agreedToTerms}
                 onChange={(e) => setAgreedToTerms(e.target.checked)}
+                className="signup-checkbox"
               />
-              <span className="checkmark"></span>
-              <span className="checkbox-text">
+              <span className="checkmark signup-checkmark"></span>
+              <span className="checkbox-text signup-checkbox-text">
                 이용약관 제공업체 수집 및 동의, 마케팅 동의 및 선택사항 모두 동의합니다.
               </span>
             </label>
@@ -493,8 +499,8 @@ const SignUp = () => {
           </button>
         </form>
         <div className="signup-links">
-          <span>이미 계정이 있으신가요?</span>
-          <Link to="/login">로그인</Link>
+          <span className="signup-links-text">이미 계정이 있으신가요?</span>
+          <Link to="/login" className="signup-login-link">로그인</Link>
         </div>
       </div>
     </div>

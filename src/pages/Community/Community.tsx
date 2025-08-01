@@ -148,7 +148,6 @@ const Community = () => {
               북마크 게시판
             </button>
           </div>
-        </div>
 
         {/* 탭 제목 */}
         <div className="text-center mb-8">
