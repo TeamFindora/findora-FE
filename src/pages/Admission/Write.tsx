@@ -3,16 +3,19 @@ import { useNavigate } from 'react-router-dom'
 import { postsApi } from '../../api/posts'
 import { getCurrentUser } from '../../api/auth'
 
+
 const AdmissionWrite = () => {
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
     title: '',
     school: '',
     major: '',
-    year: new Date().getFullYear().toString(),
-    content: '',
-    rating: 5
+    admissionYear: '',
+    admissionMonth: '',
+    content: ''
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -25,12 +28,14 @@ const AdmissionWrite = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.title.trim() || !formData.school.trim() || !formData.major.trim() || !formData.content.trim()) {
+    if (!formData.title.trim() || !formData.school.trim() || !formData.major.trim() || !formData.admissionYear.trim() || !formData.admissionMonth.trim() || !formData.content.trim()) {
       alert('모든 필수 항목을 입력해주세요.')
       return
     }
 
     try {
+      setIsSubmitting(true)
+      
       const currentUser = getCurrentUser()
       if (!currentUser) {
         alert('로그인이 필요합니다.')
@@ -42,8 +47,7 @@ const AdmissionWrite = () => {
       const formattedContent = `
 🎓 **학교**: ${formData.school}
 📚 **전공**: ${formData.major}  
-📅 **합격년도**: ${formData.year}년
-⭐ **만족도**: ${formData.rating}/5
+📅 **합격**: ${formData.admissionYear} ${formData.admissionMonth}
 
 ---
 
@@ -58,10 +62,17 @@ ${formData.content}
         userId: currentUser.userId
       })
       
-      alert('합격수기가 성공적으로 작성되었습니다!')
-      navigate('/admission')
+      // 성공 상태 표시
+      setIsSubmitting(false)
+      setIsSuccess(true)
+      
+      // 1.5초 후 페이지 이동
+      setTimeout(() => {
+        navigate('/admission')
+      }, 1500)
     } catch (error) {
       console.error('게시글 작성 실패:', error)
+      setIsSubmitting(false)
       alert('게시글 작성에 실패했습니다. 다시 시도해주세요.')
     }
   }
@@ -73,154 +84,173 @@ ${formData.content}
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 text-gray-800 py-12 px-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gray-50 py-8 px-4">
+        <div className="max-w-3xl mx-auto">
         {/* 헤더 */}
-        <div className="bg-gradient-to-r from-[#B8DCCC] to-[#9BC5B3] rounded-xl p-6 mb-8 shadow-lg">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-white">✏️ 합격수기 작성하기</h1>
-            <p className="text-white text-sm opacity-90 mt-2">
-              후배들에게 도움이 되는 생생한 합격 경험을 공유해주세요
-            </p>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-3xl font-semibold text-gray-900 mb-3">합격수기 작성</h1>
+          <p className="text-gray-600 text-base leading-relaxed">
+            후배들에게 도움이 되는 생생한 합격 경험을 공유해주세요
+          </p>
         </div>
 
         {/* 작성 폼 */}
-        <div className="bg-white rounded-2xl p-8 shadow-xl">
-          <form onSubmit={handleSubmit}>
+        <div className="bg-white rounded-lg border border-gray-200 p-8">
+          <form onSubmit={handleSubmit} className="space-y-8">
             {/* 기본 정보 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="space-y-6">
+              <h2 className="text-lg font-medium text-gray-900 pb-2 border-b border-gray-100">기본 정보</h2>
+              
+              {/* 제목 - 전체 폭 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  제목 <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  제목 <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
-                  placeholder="예: MIT 컴퓨터과학과 합격 후기"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B8DCCC] focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   maxLength={100}
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  학교명 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="school"
-                  value={formData.school}
-                  onChange={handleChange}
-                  placeholder="예: MIT, Stanford, Cambridge"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B8DCCC] focus:border-transparent"
-                />
+              {/* 학교명, 전공 - 나란히 배치 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                    학교명 <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="school"
+                    value={formData.school}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                    전공 <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="major"
+                    value={formData.major}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  />
+                </div>
               </div>
 
+              {/* 합격년월 - 년도/월 자유 입력 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  전공 <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  합격년월 <span className="text-red-400">*</span>
                 </label>
-                <input
-                  type="text"
-                  name="major"
-                  value={formData.major}
-                  onChange={handleChange}
-                  placeholder="예: Computer Science, Physics"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B8DCCC] focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  합격년도 <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="year"
-                  value={formData.year}
-                  onChange={handleChange}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B8DCCC] focus:border-transparent"
-                >
-                  {Array.from({ length: 10 }, (_, i) => {
-                    const year = new Date().getFullYear() - i
-                    return (
-                      <option key={year} value={year.toString()}>
-                        {year}년
-                      </option>
-                    )
-                  })}
-                </select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <input
+                      type="text"
+                      name="admissionYear"
+                      value={formData.admissionYear}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">년도</p>
+                  </div>
+                  <div>
+                    <input
+                      type="text"
+                      name="admissionMonth"
+                      value={formData.admissionMonth}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">월/학기</p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* 만족도 */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                전반적 만족도
-              </label>
-              <div className="flex items-center gap-2">
-                {[1, 2, 3, 4, 5].map(star => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, rating: star }))}
-                    className={`text-2xl ${star <= formData.rating ? 'text-yellow-500' : 'text-gray-300'}`}
-                  >
-                    ⭐
-                  </button>
-                ))}
-                <span className="ml-2 text-sm text-gray-600">({formData.rating}/5)</span>
-              </div>
-            </div>
 
             {/* 내용 */}
-            <div className="mb-8">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                합격수기 내용 <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                name="content"
-                value={formData.content}
-                onChange={handleChange}
-                placeholder="합격 과정에서의 경험, 준비 방법, 팁 등을 자세히 작성해주세요.
-예시:
-- 지원 동기와 준비 과정
-- SOP/CV 작성 팁
-- 인터뷰 경험담
-- 추천서 준비 방법
-- 시험 준비 (GRE, TOEFL 등)
-- 합격 후 소감"
-                className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B8DCCC] focus:border-transparent resize-none"
-                rows={15}
-                maxLength={5000}
-              />
-              <div className="text-right text-sm text-gray-500 mt-2">
-                {formData.content.length}/5000
+            <div className="space-y-6">
+              <div className="pb-2 border-b border-gray-100">
+                <h2 className="text-lg font-medium text-gray-900 inline">합격수기<span className="text-red-400 text-lg ml-1">*</span></h2>
+              </div>
+              <div>
+                <div className="text-sm text-gray-600 mb-4 p-4 bg-gray-50 rounded-md">
+                  <p className="font-medium mb-2">다음 내용을 포함해 주세요:</p>
+                  <ul className="space-y-1 text-sm">
+                    <li>• 지원 동기와 준비 과정</li>
+                    <li>• SOP/CV 작성 팁</li>
+                    <li>• 인터뷰 경험담</li>
+                    <li>• 추천서 준비 방법</li>
+                    <li>• 시험 준비 (GRE, TOEFL 등)</li>
+                    <li>• 합격 후 소감</li>
+                  </ul>
+                </div>
+                <textarea
+                  name="content"
+                  value={formData.content}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
+                  rows={16}
+                  maxLength={5000}
+                />
+                <div className="flex justify-between items-center mt-2">
+                  <div className="text-xs text-gray-500">최소 100자 이상 작성해주세요</div>
+                  <div className="text-sm text-gray-500">
+                    {formData.content.length}/5000
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* 버튼 */}
-            <div className="flex justify-end gap-4">
+            <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
               <button
                 type="button"
                 onClick={handleCancel}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors font-medium"
               >
                 취소
               </button>
               <button
                 type="submit"
-                className="px-6 py-3 bg-gradient-to-r from-[#B8DCCC] to-[#9BC5B3] text-black font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                disabled={isSubmitting || isSuccess}
+                className={`px-6 py-2.5 rounded-md font-medium transition-all duration-300 ${
+                  isSuccess 
+                    ? 'bg-green-600 text-white' 
+                    : isSubmitting
+                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
               >
-                작성완료
+                {isSuccess ? (
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    작성완료!
+                  </div>
+                ) : isSubmitting ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    작성 중...
+                  </div>
+                ) : (
+                  '작성완료'
+                )}
               </button>
             </div>
           </form>
         </div>
+        </div>
       </div>
-    </div>
   )
 }
 

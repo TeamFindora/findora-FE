@@ -3,6 +3,7 @@ import { useTabs, type TabType } from '../common/useTabs'
 import { usePostsList } from '../posts/usePostsList'
 import { usePostsFilter } from '../posts/usePostsFilter'
 import { useBookmarkedPosts } from '../bookmarks/useBookmarkedPosts'
+import { useCommentCounts } from '../useCommentCount'
 import { mockPosts } from '../../data/mockPosts'
 
 export const useCommunity = () => {
@@ -54,6 +55,22 @@ export const useCommunity = () => {
     itemsPerPage: 10,
     initialSortBy: 'latest'
   })
+
+  // 댓글 수 조회 (현재 표시되는 게시글들의 ID만)
+  const currentPostIds = useMemo(() => {
+    switch (activeTab) {
+      case 'free':
+        return freeBoard.currentPosts.map(post => post.id)
+      case 'best':
+        return bestBoard.currentPosts.map(post => post.id)
+      case 'bookmark':
+        return bookmarkBoard.currentPosts.map(post => post.id)
+      default:
+        return []
+    }
+  }, [activeTab, freeBoard.currentPosts, bestBoard.currentPosts, bookmarkBoard.currentPosts])
+
+  const { commentCounts, loading: commentCountsLoading } = useCommentCounts(currentPostIds)
 
   // 현재 활성 탭에 따른 데이터 선택
   const currentData = useMemo(() => {
@@ -107,6 +124,10 @@ export const useCommunity = () => {
     
     // 현재 탭 데이터
     ...currentData,
+    
+    // 댓글 수 데이터
+    commentCounts,
+    commentCountsLoading,
     
     // 특별한 북마크 상태들
     ...(activeTab === 'bookmark' && {

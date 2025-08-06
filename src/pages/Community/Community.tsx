@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom'
-import CommentCount from '../../components/CommentCount'
 import { useCommunity } from '../../hooks/pages/useCommunity'
 
 const Community = () => {
@@ -22,6 +21,10 @@ const Community = () => {
     searchTerm,
     handleSearchChange,
     handleSearchSubmit,
+    
+    // 댓글 수 데이터
+    commentCounts,
+    commentCountsLoading,
     hasSearchTerm,
     
     // 정렬 기능
@@ -148,6 +151,7 @@ const Community = () => {
               북마크 게시판
             </button>
           </div>
+        </div>
 
         {/* 탭 제목 */}
         <div className="text-center mb-8">
@@ -295,7 +299,9 @@ const Community = () => {
                       <div className="text-sm text-gray-600 mt-2 flex items-center gap-2">
                         <span>작성자: {'userNickname' in post ? post.userNickname : (post as any).writer}</span>
                         <span>·</span>
-                        <CommentCount postId={post.id} />
+                        <span className="text-gray-500 text-sm">
+                          💬 {commentCountsLoading ? '...' : (commentCounts[post.id] || 0)}
+                        </span>
                         <span>댓글</span>
                         <span>·</span>
                         <span>👁️ {'viewCount' in post ? post.viewCount : ('views' in post ? (post as any).views : 0)} 조회</span>

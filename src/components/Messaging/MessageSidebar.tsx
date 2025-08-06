@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useMessages } from '../../hooks/messaging/useMessages'
-import { useMessageSidebar } from '../../hooks/messaging/useMessageSidebar'
 import { useMessageCount } from '../../hooks/messaging/useMessageCount'
 import MessageList from './MessageList'
 import MessageThread from './MessageThread'
@@ -16,6 +15,8 @@ interface MessageSidebarProps {
 
 const MessageSidebar = ({ isOpen, onClose, targetUserId, authorNickname }: MessageSidebarProps) => {
   const [isClosing, setIsClosing] = useState(false)
+  const [selectedThread, setSelectedThread] = useState<any>(null)
+  const [view, setView] = useState<'list' | 'thread'>('list')
   
   const { 
     threads, 
@@ -28,12 +29,15 @@ const MessageSidebar = ({ isOpen, onClose, targetUserId, authorNickname }: Messa
     getTotalUnreadCount 
   } = useMessages()
   
-  const {
-    selectedThread,
-    view,
-    selectThread,
-    backToList
-  } = useMessageSidebar()
+  const selectThread = (thread: any) => {
+    setSelectedThread(thread)
+    setView('thread')
+  }
+
+  const backToList = () => {
+    setSelectedThread(null)
+    setView('list')
+  }
 
   // targetUserId가 제공된 경우 해당 사용자와의 스레드를 찾거나 새로 생성
   useEffect(() => {
@@ -64,7 +68,16 @@ const MessageSidebar = ({ isOpen, onClose, targetUserId, authorNickname }: Messa
         selectThread(newThread)
       }
     }
-  }, [targetUserId, threads, isOpen, selectThread])
+  }, [targetUserId, threads, isOpen])
+
+  // 사이드바가 열릴 때마다 상태 초기화
+  useEffect(() => {
+    if (isOpen && !targetUserId) {
+      // targetUserId가 없으면 목록 뷰로 시작
+      setView('list')
+      setSelectedThread(null)
+    }
+  }, [isOpen, targetUserId])
 
   const {
     remainingCount,
@@ -162,10 +175,14 @@ const MessageSidebar = ({ isOpen, onClose, targetUserId, authorNickname }: Messa
 
   if (!isOpen) return null
 
+
   return (
     <>
       {/* 오버레이 */}
-      <div className={`message-sidebar-overlay ${isClosing ? 'closing' : ''}`} onClick={handleClose} />
+      <div 
+        className={`message-sidebar-overlay ${isClosing ? 'closing' : ''}`} 
+        onClick={handleClose}
+      />
       
       {/* 사이드바 */}
       <div className={`message-sidebar ${isClosing ? 'closing' : ''}`}>

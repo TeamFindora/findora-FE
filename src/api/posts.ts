@@ -280,6 +280,9 @@ export const commentsApi = {
       return response
     } else if (response && typeof response === 'object' && 'data' in response) {
       return response.data
+    } else if (response && typeof response === 'object' && 'message' in response) {
+      // 댓글이 없는 경우 백엔드가 {message: '댓글이 없습니다'} 형태로 응답
+      return []
     } else {
       console.error('예상하지 못한 댓글 API 응답 구조:', response)
       return []

@@ -1,6 +1,8 @@
 import { Routes, Route } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { Home, Login, SignUp, Profile, Admission, Research, Community, ResearchDetail } from './pages'
 import { Header, Footer } from './components'
+import MessageSidebar from './components/Messaging/MessageSidebar'
 import ProtectedRoute from './components/ProtectedRoute'
 import PostDetail from './pages/Community/PostDetail'
 import WritePost from './pages/Community/WritePost'
@@ -27,8 +29,27 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 }
 
 function App() {
+  const [isMessageSidebarOpen, setIsMessageSidebarOpen] = useState(false)
+
+  // Nav에서 발생한 메시지 사이드바 열기 이벤트 수신
+  useEffect(() => {
+    const handleOpenMessageSidebar = () => {
+      setIsMessageSidebarOpen(true)
+    }
+
+    window.addEventListener('open-message-sidebar', handleOpenMessageSidebar)
+    return () => {
+      window.removeEventListener('open-message-sidebar', handleOpenMessageSidebar)
+    }
+  }, [])
+
+  const handleCloseMessageSidebar = () => {
+    setIsMessageSidebarOpen(false)
+  }
+
   return (
-    <Routes>
+    <>
+      <Routes>
       {/* 홈페이지 - 헤더/푸터 포함 */}
       <Route 
         path="/" 
@@ -205,7 +226,14 @@ function App() {
           </Layout>
         } 
       />
-    </Routes>
+      </Routes>
+      
+      {/* 메시지 사이드바 - 최상위 레벨에서 렌더링 */}
+      <MessageSidebar 
+        isOpen={isMessageSidebarOpen}
+        onClose={handleCloseMessageSidebar}
+      />
+    </>
   )
 }
 
