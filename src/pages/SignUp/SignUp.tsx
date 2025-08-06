@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { checkNickname, checkUsername, sendEmailVerification, verifyEmailCode, signUp } from '../../api'
 import type { AgreementData } from '../../api'
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import './SignUp.css'
 
 const SignUp = () => {
@@ -372,7 +373,7 @@ const SignUp = () => {
                 className="eye-button signup-eye-button"
                 onClick={togglePasswordVisibility}
               >
-                <span className="signup-eye-icon">👁️</span>
+                {showPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
               </button>
             </div>
           </div>
@@ -399,7 +400,7 @@ const SignUp = () => {
                 className="eye-button signup-eye-button"
                 onClick={toggleConfirmPasswordVisibility}
               >
-                <span className="signup-eye-icon">👁️</span>
+                {showPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
               </button>
             </div>
           </div>

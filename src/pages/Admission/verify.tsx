@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { AcademicCapIcon } from '@heroicons/react/24/outline'
 
 const Verify = () => {
   const navigate = useNavigate()
@@ -76,7 +77,10 @@ const Verify = () => {
           >
             ← 입시관으로 돌아가기
           </button>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">🎓 해외대학원 재학 인증</h1>
+                      <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center justify-center gap-2">
+              <AcademicCapIcon className="w-8 h-8" />
+              해외대학원 재학 인증
+            </h1>
           <p className="text-gray-600">합격자 후기를 작성하기 위해 재학 인증이 필요합니다</p>
         </div>
 

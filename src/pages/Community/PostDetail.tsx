@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
+import { EyeIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline'
 
 const PostDetail = () => {
   const { id } = useParams()
@@ -90,7 +91,7 @@ const PostDetail = () => {
 
   return (
     <div className="post-detail-page min-h-screen bg-white text-black py-12 px-6">
-      <div className="post-detail-container py-10 px-40">
+      <div className="post-detail-container">
         {/* 뒤로가기 버튼 */}
         <div className="post-detail-back-section text-left mt-10 mb-5">
           <button
@@ -111,8 +112,8 @@ const PostDetail = () => {
               <h2 className="post-detail-title text-2xl font-bold">{mockPost.title}</h2>
               <p className="post-detail-author text-gray-600">작성자: {mockPost.writer}</p>
               <div className="post-detail-meta flex items-center space-x-4 text-sm text-gray-600">
-                <span className="post-detail-views">👁️ 조회 {mockPost.views}</span>
-                <span className="post-detail-comments">💬 댓글 {mockPost.comments}</span>
+                <span className="post-detail-views flex items-center gap-1"><EyeIcon className="w-4 h-4" /> 조회 {mockPost.views}</span>
+                <span className="post-detail-comments flex items-center gap-1"><ChatBubbleLeftIcon className="w-4 h-4" /> 댓글 {mockPost.comments}</span>
                 <span className="post-detail-likes">👍 좋아요 {mockPost.likes}</span>
                 <span className="post-detail-date">작성일: {mockPost.createdAt}</span>
               </div>
@@ -227,7 +228,7 @@ const PostDetail = () => {
                       {post.title}
                     </h4>
                     <div className="post-detail-related-meta text-xs text-gray-500">
-                      작성자: {post.writer} · 👁️ {post.views} · 💬 {post.comments}
+                      작성자: {post.writer} · <EyeIcon className="w-4 h-4 inline" /> {post.views} · <ChatBubbleLeftIcon className="w-4 h-4 inline" /> {post.comments}
                     </div>
                   </div>
                 ))}

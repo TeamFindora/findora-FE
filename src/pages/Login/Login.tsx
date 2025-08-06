@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { login } from '../../api'
+import { ChatBubbleLeftIcon } from '@heroicons/react/24/outline'
 import './Login.css'
 
 // 카카오 SDK 타입 선언
@@ -232,7 +233,7 @@ const Login = () => {
           onClick={handleKakaoLogin}
           disabled={loading}
         >
-          <span className="kakao-icon">💬</span>
+                          <ChatBubbleLeftIcon className="w-5 h-5" />
           {loading ? '로그인 중...' : '카카오 로그인'}
         </button>
         
