@@ -230,12 +230,18 @@ export const commentsApi = {
     const response = await apiClient.get(`/api/posts/${postId}/comments`)
     if (Array.isArray(response)) {
       return response
-    } else if (response && typeof response === 'object' && 'data' in response) {
-      return response.data
-    } else {
-      console.error('예상하지 못한 댓글 API 응답 구조:', response)
-      return []
+    } else if (response && typeof response === 'object') {
+      // 댓글이 없을 때의 응답 처리
+      if ('message' in response && response.message === '댓글이 없습니다') {
+        return []
+      }
+      // data 필드가 있는 경우
+      if ('data' in response) {
+        return Array.isArray(response.data) ? response.data : []
+      }
     }
+    console.error('예상하지 못한 댓글 API 응답 구조:', response)
+    return []
   },
 
   // 댓글 작성

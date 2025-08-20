@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { Home, Login, SignUp, Profile, Admission, Research, Community, ResearchDetail } from './pages'
 import { Header, Footer } from './components'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -7,6 +8,8 @@ import WritePost from './pages/Community/WritePost'
 import EditPost from './pages/Community/EditPost'
 import FreeBoard from './pages/Community/FreeBoard'
 import BestBoard from './pages/Community/BestBoard'
+import MessageSidebar from './components/Messaging/MessageSidebar'
+import AdminPage from './pages/AdminPage'
 import Verify from './pages/Admission/verify'
 import './App.css'
 
@@ -24,7 +27,39 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 }
 
 function App() {
+  const [isMessageSidebarOpen, setIsMessageSidebarOpen] = useState(false)
+  const [messageTarget, setMessageTarget] = useState<{ userId?: string; nickname?: string }>({})
+
+  // 쪽지 사이드바 열기 이벤트 리스너
+  useEffect(() => {
+    const handleOpenMessageSidebar = (event: any) => {
+      const { userId, nickname } = event.detail || {}
+      console.log('App.tsx - 쪽지 사이드바 이벤트 받음:', { userId, nickname })
+      setMessageTarget({ userId, nickname })
+      setIsMessageSidebarOpen(true)
+    }
+
+    const handleOpenMessageSidebarSimple = () => {
+      setMessageTarget({})
+      setIsMessageSidebarOpen(true)
+    }
+
+    window.addEventListener('open-message-sidebar-with-target', handleOpenMessageSidebar)
+    window.addEventListener('open-message-sidebar', handleOpenMessageSidebarSimple)
+
+    return () => {
+      window.removeEventListener('open-message-sidebar-with-target', handleOpenMessageSidebar)
+      window.removeEventListener('open-message-sidebar', handleOpenMessageSidebarSimple)
+    }
+  }, [])
+
+  const closeMessageSidebar = () => {
+    setIsMessageSidebarOpen(false)
+    setMessageTarget({})
+  }
+
   return (
+    <>
     <Routes>
       {/* 홈페이지 - 헤더/푸터 포함 */}
       <Route 
@@ -156,6 +191,18 @@ function App() {
         } 
       />
       
+      {/* 관리자 페이지 - 로그인 필요 */}
+      <Route 
+        path="/admin" 
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <AdminPage />
+            </Layout>
+          </ProtectedRoute>
+        } 
+      />
+      
       {/* 404 페이지 */}
       <Route 
         path="*" 
@@ -169,6 +216,15 @@ function App() {
         } 
       />
     </Routes>
+    
+    {/* 전역 쪽지 사이드바 */}
+    <MessageSidebar
+      isOpen={isMessageSidebarOpen}
+      onClose={closeMessageSidebar}
+      targetUserId={messageTarget.userId}
+      authorNickname={messageTarget.nickname}
+    />
+    </>
   )
 }
 

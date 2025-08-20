@@ -5,6 +5,7 @@ import { postsApi, CATEGORIES } from '../../api/posts'
 import type { PostResponseDto } from '../../api/posts'
 import { CommentCount } from '../../components'
 import { isAuthenticated } from '../../api/auth'
+import { usePostsList } from '../../hooks/posts/usePostsList'
 
 // 임시 북마크 API (실제 API 연동 전까지 사용)
 const bookmarksApi = {
@@ -21,9 +22,19 @@ const Community = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const postsPerPage = 5
   const [activeTab, setActiveTab] = useState<'free' | 'best' | 'bookmark'>('free')
-  const [posts, setPosts] = useState<PostResponseDto[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+
+  // usePostsList 훅 사용하여 입시관 카테고리 제외
+  const { posts, loading, error } = usePostsList({
+    excludeCategoryId: 3, // 입시관 카테고리 제외
+    onSuccess: (posts) => {
+      console.log('=== 커뮤니티 페이지 데이터 로드 완료 ===')
+      console.log('총 게시글 수:', posts.length, '개')
+      console.log('게시글 카테고리들:', posts.map(p => (p as any).category?.id || (p as any).categoryId))
+      console.log('게시글 제목들:', posts.map(p => p.title))
+      console.log('입시관 카테고리(3번) 제외됨')
+      console.log('=====================================')
+    }
+  })
 
   // 북마크 관련 상태
   const [bookmarkLoading, setBookmarkLoading] = useState(false)
@@ -33,30 +44,6 @@ const Community = () => {
   const [bookmarkSort, setBookmarkSort] = useState('latest')
   const [bookmarkPage, setBookmarkPage] = useState(1)
   const bookmarkPostsPerPage = 10;
-
-  // 게시글 데이터 로드 (자유/베스트)
-  useEffect(() => {
-    const loadPosts = async () => {
-      try {
-        setLoading(true)
-        const allPosts = await postsApi.getAllPosts()
-        if (Array.isArray(allPosts)) {
-          setPosts(allPosts)
-        } else if (allPosts && typeof allPosts === 'object' && 'data' in allPosts && Array.isArray((allPosts as any).data)) {
-          setPosts((allPosts as any).data)
-        } else {
-          setPosts([])
-        }
-        setError(null)
-      } catch (err) {
-        setError('게시글을 불러오는데 실패했습니다.')
-        setPosts([])
-      } finally {
-        setLoading(false)
-      }
-    }
-    loadPosts()
-  }, [])
 
   // 북마크 게시글 데이터 로드
   useEffect(() => {

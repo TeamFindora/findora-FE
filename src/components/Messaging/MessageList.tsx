@@ -1,5 +1,5 @@
 import MessageItem from './MessageItem'
-import { MessageThread } from '../../hooks/messaging/useMessages'
+import { MessageThread } from '../../hooks/messaging/useOptimizedMessages'
 
 interface MessageListProps {
   threads: MessageThread[]

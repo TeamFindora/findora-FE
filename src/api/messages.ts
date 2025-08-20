@@ -1,6 +1,19 @@
 // API 기본 설정
 const API_BASE_URL = 'http://localhost:8080' // 백엔드 서버 URL
 
+// auth.ts에서 getCurrentUser 함수 import
+import { getCurrentUser } from './auth'
+
+// 권한 에러 체크 헬퍼
+const isAuthError = (error: any): boolean => {
+  return error instanceof Error && (
+    error.message.includes('401') || 
+    error.message.includes('500') ||
+    error.message.includes('Unauthorized') ||
+    error.message.includes('인증이 필요')
+  )
+}
+
 // API 클라이언트 함수
 const apiClient = {
   get: async (url: string) => {
@@ -49,7 +62,9 @@ const apiClient = {
       throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`)
     }
     
-    return await response.json()
+    // 응답이 비어있는지 확인
+    const responseText = await response.text()
+    return responseText ? JSON.parse(responseText) : { success: true }
   },
 
   delete: async (url: string) => {
@@ -144,14 +159,30 @@ const getUserInfo = async (userId: number): Promise<{ nickname: string }> => {
 export const messagesApi = {
   // 받은 쪽지 목록 조회
   getReceivedMessages: async (): Promise<MessageResponseDto[]> => {
-    const response = await apiClient.get('/api/messages/received')
-    return Array.isArray(response) ? response : []
+    try {
+      const response = await apiClient.get('/api/messages/received')
+      return Array.isArray(response) ? response : []
+    } catch (error) {
+      if (isAuthError(error)) {
+        console.info('쪽지 권한이 없는 사용자 - 빈 배열 반환')
+        return []
+      }
+      throw error
+    }
   },
 
   // 보낸 쪽지 목록 조회
   getSentMessages: async (): Promise<MessageResponseDto[]> => {
-    const response = await apiClient.get('/api/messages/sent')
-    return Array.isArray(response) ? response : []
+    try {
+      const response = await apiClient.get('/api/messages/sent')
+      return Array.isArray(response) ? response : []
+    } catch (error) {
+      if (isAuthError(error)) {
+        console.info('쪽지 권한이 없는 사용자 - 빈 배열 반환')
+        return []
+      }
+      throw error
+    }
   },
 
   // 쪽지 단건 조회
@@ -247,6 +278,11 @@ export const messagesApi = {
       return Array.from(threadsMap.values())
         .sort((a, b) => new Date(b.lastMessage.sentAt).getTime() - new Date(a.lastMessage.sentAt).getTime())
     } catch (error) {
+      // 인증 에러인 경우 빈 배열 반환
+      if (isAuthError(error)) {
+        console.info('인증이 필요하거나 권한이 없는 사용자 - 빈 스레드 목록 반환')
+        return []
+      }
       console.error('메시지 스레드 생성 실패:', error)
       throw error
     }
@@ -310,14 +346,19 @@ export const messageAuthApi = {
   // 현재 사용자의 남은 쪽지 개수 조회 (편의 함수)
   getCurrentUserMessageCount: async (): Promise<number> => {
     try {
-      const currentUser = JSON.parse(localStorage.getItem('user') || '{}')
-      if (!currentUser.userId) {
-        throw new Error('사용자 정보를 찾을 수 없습니다.')
+      const currentUser = getCurrentUser()
+      if (!currentUser?.userId) {
+        return 0
       }
       
       const response = await messageAuthApi.getMessageCount(currentUser.userId)
       return response.count
-    } catch (error) {
+    } catch (error: any) {
+      // 인증 에러인 경우 0 반환
+      if (isAuthError(error)) {
+        console.info('쪽지 권한이 없거나 인증이 필요한 사용자 - count: 0 반환')
+        return 0
+      }
       console.error('남은 쪽지 개수 조회 실패:', error)
       return 0
     }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MessageThread } from '../../hooks/messaging/useMessages'
+import { MessageThread } from '../../hooks/messaging/useOptimizedMessages'
 
 interface MessageItemProps {
   thread: MessageThread

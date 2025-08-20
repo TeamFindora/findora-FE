@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { useMessageCount } from '../../hooks/messaging/useMessageCount'
+import { useUnreadMessageCount } from '../../hooks/messaging/useUnreadMessageCount'
 
 interface UserDropdownProps {
   user: {
@@ -12,7 +12,7 @@ interface UserDropdownProps {
 const UserDropdown = ({ user, onMessageClick }: UserDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
-  const { remainingCount } = useMessageCount()
+  const { unreadCount } = useUnreadMessageCount()
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -81,9 +81,9 @@ const UserDropdown = ({ user, onMessageClick }: UserDropdownProps) => {
               <path d="M21 11.5C21.0034 12.8199 20.6951 14.1219 20.1 15.3C19.3944 16.7117 18.3098 17.8992 16.9674 18.7293C15.6251 19.5594 14.0782 19.9994 12.5 20C11.1801 20.0035 9.87812 19.6951 8.7 19.1L3 21L4.9 15.3C4.30493 14.1219 3.99656 12.8199 4 11.5C4.00061 9.92179 4.44061 8.37488 5.27072 7.03258C6.10083 5.69028 7.28825 4.60573 8.7 3.9C9.87812 3.30493 11.1801 2.99656 12.5 3H13C15.0843 3.11499 17.053 3.99476 18.5291 5.47086C20.0052 6.94695 20.885 8.91565 21 11V11.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             <span>쪽지함</span>
-            {remainingCount > 0 && (
+            {unreadCount > 0 && (
               <span className="message-count-badge">
-                {remainingCount}
+                {unreadCount}
               </span>
             )}
           </button>

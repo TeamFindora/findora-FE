@@ -243,11 +243,18 @@ export const getCurrentUser = () => {
 };
 
 export const logout = (): void => {
+  // 모든 인증 관련 데이터 삭제
   localStorage.removeItem('accessToken');
   localStorage.removeItem('refreshToken');
   localStorage.removeItem('tokenType');
   localStorage.removeItem('expiresIn');
   localStorage.removeItem('user');
+  
+  // 추가로 모든 관련 데이터 삭제
+  sessionStorage.clear(); // 세션 스토리지도 정리
+  
+  // 페이지 새로고침으로 React 상태 완전 초기화
+  window.location.reload();
 };
 
 // 사용자 프로필 조회
