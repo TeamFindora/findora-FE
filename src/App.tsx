@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { Home, Login, SignUp, Profile, Admission, Research, Community, ResearchDetail } from './pages'
+import DocumentEditor from './pages/DocumentEditor'
 import { Header, Footer } from './components'
 import MessageSidebar from './components/Messaging/MessageSidebar'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -213,6 +214,9 @@ function App() {
           </ProtectedRoute>
         } 
       />
+
+      {/* 문서 편집기 - Office Add-in용 */}
+      <Route path="/document-editor" element={<DocumentEditor />} />
       
       {/* 404 페이지 */}
       <Route 
