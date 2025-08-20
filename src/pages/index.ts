@@ -7,4 +7,3 @@ export { default as Research } from '../pages/Research/Research'
 export { default as ResearchDetail } from "../pages/Research/ResearchDetail"
 export { default as Community} from '../pages/Community/Community'
 export { default as EditPost } from './Community/EditPost'
-export { default as BookmarkBoard } from './Community/BookmarkBoard'

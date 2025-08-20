@@ -1,70 +1,129 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { useEditPost } from '../../hooks/pages/useEditPost'
+import { useState, useEffect } from 'react'
+import '../Home/Home.css'
+import { postsApi } from '../../api/posts'
+import type { PostResponseDto, PostUpdateDto } from '../../api/posts'
+import { getCurrentUser, isAuthenticated } from '../../api/auth'
 
 const EditPost = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const postId = parseInt(id || '0')
-  
-  const {
-    // 게시글 데이터
-    post,
-    postLoading,
-    postError,
-    
-    // 권한
-    canEditPost,
-    
-    // 폼 관리
-    title,
-    content,
-    submitting,
-    handleTitleChange,
-    handleContentChange,
-    handleSubmit,
-    handleCancel,
-    isValid,
-    
-    // 통합 로딩 상태
-    loading
-  } = useEditPost({ postId })
+  const [title, setTitle] = useState('')
+  const [content, setContent] = useState('')
+  const [categoryId, setCategoryId] = useState(1) // 기본값: 일반
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [post, setPost] = useState<PostResponseDto | null>(null)
 
+  // 현재 로그인한 사용자 정보
+  const currentUser = getCurrentUser()
+
+  // 게시글 데이터 로드
+  useEffect(() => {
+    const loadPost = async () => {
+      if (!id) return
+      
+      try {
+        setLoading(true)
+        const postData = await postsApi.getPostById(Number(id))
+        setPost(postData)
+        
+        // 폼 데이터 설정
+        setTitle(postData.title)
+        setContent(postData.content)
+        setCategoryId(postData.category.id)
+        
+        setError(null)
+      } catch (err) {
+        console.error('게시글 로드 실패:', err)
+        setError('게시글을 불러오는데 실패했습니다.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadPost()
+  }, [id])
+
+  // 작성자 권한 확인 (JWT 기반)
+  const isAuthor = () => {
+    if (!post || !currentUser) return false
+    return post.userNickname === currentUser.nickname
+  }
+
+  // 폼 제출 처리
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!id || !title.trim() || !content.trim()) {
+      alert('제목과 내용을 모두 입력해주세요.')
+      return
+    }
+
+    try {
+      setSubmitting(true)
+      
+      const postData: PostUpdateDto = {
+        title: title.trim(),
+        content: content.trim()
+      }
+
+      await postsApi.updatePost(Number(id), postData)
+      alert('게시글이 수정되었습니다.')
+      navigate(`/community/post/${id}`)
+    } catch (err) {
+      console.error('게시글 수정 실패:', err)
+      alert('게시글 수정에 실패했습니다.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  // 카테고리 옵션
+  const categories = [
+    { id: 1, name: '일반' },
+    { id: 2, name: '공지사항' },
+    { id: 3, name: '질문&답변' }
+  ]
+
+  // 로딩 상태
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-lg text-gray-600">게시글을 불러오는 중...</div>
+      <div className="min-h-screen bg-black text-white py-12 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="text-gray-500 text-lg">게시글을 불러오는 중...</div>
+        </div>
       </div>
     )
   }
 
-  if (postError || !post) {
+  // 에러 상태
+  if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-500 text-lg mb-4">
-            {postError || '게시글을 찾을 수 없습니다.'}
-          </div>
+      <div className="min-h-screen bg-black text-white py-12 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="text-red-500 text-lg mb-4">{error}</div>
           <button
             onClick={() => navigate('/community')}
-            className="px-6 py-2 bg-[#B8DCCC] text-black rounded-lg hover:bg-opacity-90 transition"
+            className="text-[#B8DCCC] hover:text-white transition"
           >
-            목록으로 돌아가기
+            커뮤니티로 돌아가기
           </button>
         </div>
       </div>
     )
   }
 
-  if (!canEditPost) {
+  // 권한 없음
+  if (!isAuthor()) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-500 text-lg mb-4">
-            게시글 수정 권한이 없습니다.
-          </div>
+      <div className="min-h-screen bg-black text-white py-12 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="text-red-500 text-lg mb-4">게시글을 수정할 권한이 없습니다.</div>
           <button
-            onClick={() => navigate(`/community/post/${postId}`)}
-            className="px-6 py-2 bg-[#B8DCCC] text-black rounded-lg hover:bg-opacity-90 transition"
+            onClick={() => navigate(`/community/post/${id}`)}
+            className="text-[#B8DCCC] hover:text-white transition"
           >
             게시글로 돌아가기
           </button>
@@ -74,88 +133,90 @@ const EditPost = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8 px-4">
+      <div className="max-w-4xl mx-auto">
         {/* 헤더 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">게시글 수정</h1>
-          <p className="text-gray-600">게시글 내용을 수정해보세요.</p>
+        <div className="text-center mb-10">
+          <h1 className="text-3xl font-bold text-slate-800 mb-3">✏️ 게시글 수정</h1>
+          <p className="text-slate-600 text-lg">
+            게시글을 수정할 수 있습니다.
+          </p>
         </div>
 
-        {/* 폼 */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm p-6">
-          {/* 제목 입력 */}
-          <div className="mb-6">
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-              제목 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="title"
-              value={title}
-              onChange={(e) => handleTitleChange(e.target.value)}
-              placeholder="제목을 입력해주세요"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#B8DCCC] transition"
-              disabled={submitting}
-              maxLength={100}
-            />
-            <div className="text-right text-sm text-gray-500 mt-1">
-              {title.length}/100
+        {/* 뒤로가기 버튼 */}
+        <div className="mb-8">
+          <button 
+            onClick={() => navigate(`/community/post/${id}`)}
+            className="text-slate-600 hover:text-slate-800 transition-colors flex items-center font-medium"
+          >
+            ← 게시글로 돌아가기
+          </button>
+        </div>
+
+        {/* 수정 폼 */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+          <form onSubmit={handleSubmit} className="space-y-8">
+
+            {/* 제목 입력 */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-3">
+                📝 제목
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="제목을 입력하세요"
+                className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-800 text-lg"
+                required
+                maxLength={100}
+              />
+              <div className="text-sm text-slate-500 mt-2">
+                {title.length}/100
+              </div>
             </div>
-          </div>
 
-          {/* 내용 입력 */}
-          <div className="mb-6">
-            <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
-              내용 <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              id="content"
-              value={content}
-              onChange={(e) => handleContentChange(e.target.value)}
-              placeholder="내용을 입력해주세요"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#B8DCCC] transition resize-none"
-              rows={15}
-              disabled={submitting}
-              maxLength={5000}
-            />
-            <div className="text-right text-sm text-gray-500 mt-1">
-              {content.length}/5000
+            {/* 내용 입력 */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-3">
+                📄 내용
+              </label>
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="내용을 입력하세요"
+                className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-800 text-lg leading-relaxed resize-none"
+                rows={15}
+                required
+                maxLength={5000}
+              />
+              <div className="text-sm text-slate-500 mt-2">
+                {content.length}/5000
+              </div>
             </div>
-          </div>
 
-          {/* 버튼 그룹 */}
-          <div className="flex justify-end space-x-4">
-            <button
-              type="button"
-              onClick={handleCancel}
-              disabled={submitting}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              취소
-            </button>
-            <button
-              type="submit"
-              disabled={submitting || !isValid}
-              className="px-6 py-2 bg-[#B8DCCC] text-black font-medium rounded-lg hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {submitting ? '수정 중...' : '게시글 수정'}
-            </button>
-          </div>
-        </form>
-
-        {/* 수정 가이드 */}
-        <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-yellow-800 mb-2">✏️ 수정 가이드</h3>
-          <ul className="text-sm text-yellow-700 space-y-1">
-            <li>• 제목과 내용을 모두 입력해주세요.</li>
-            <li>• 수정된 내용은 즉시 반영됩니다.</li>
-            <li>• 부적절한 내용은 관리자에 의해 삭제될 수 있습니다.</li>
-          </ul>
+            {/* 버튼 그룹 */}
+            <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={() => navigate(`/community/post/${id}`)}
+                className="px-6 py-3 border border-gray-300 text-slate-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                type="submit"
+                disabled={!title.trim() || !content.trim() || submitting}
+                className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+              >
+                {submitting ? '수정 중...' : '✏️ 수정하기'}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
   )
 }
 
-export default EditPost
+export default EditPost 
