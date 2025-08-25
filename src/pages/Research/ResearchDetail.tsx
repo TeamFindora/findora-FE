@@ -1,6 +1,25 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { ChatBubbleLeftIcon, UserCircleIcon, ChevronDownIcon, ChevronUpIcon, StarIcon, ChartBarIcon, AcademicCapIcon, ClockIcon, UserGroupIcon } from '@heroicons/react/24/outline'
+import { useState, useEffect } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import {
+  ChatBubbleLeftIcon,
+  UserCircleIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  StarIcon,
+  AcademicCapIcon,
+  ClockIcon,
+  UserGroupIcon,
+  DocumentTextIcon,
+} from '@heroicons/react/24/outline'
+
+/**
+ * ✅ What changed
+ * - Pastel, modern look (sky / mint / lavender accents)
+ * - Compact layout to fit (mostly) one viewport on laptop screens
+ * - Smoother “활동 추이” area chart with gradient + hover tooltip
+ * - Subtle motion on appear & hover (no heavy libs)
+ * - Responsive grid replacing `.space-y-4.dashboard-wrap` stacking
+ */
 
 interface Reply {
   id: number
@@ -19,50 +38,250 @@ interface Question {
   replies: Reply[]
 }
 
+/* ------------------------------ Shared styles ------------------------------ */
+const Card: React.FC<React.PropsWithChildren<{ className?: string; title?: string }>> = ({
+  children,
+  className = '',
+  title,
+}) => (
+  <div
+    className={
+      'rounded-2xl border border-gray-200 bg-white/90 shadow-sm backdrop-blur ' +
+      'transition-all duration-300 hover:shadow-md ' +
+      className
+    }
+  >
+    {title ? (
+      <div className="flex items-center justify-between px-4 py-3">
+        <h4 className="text-sm font-semibold text-gray-900">{title}</h4>
+      </div>
+    ) : null}
+    {children}
+  </div>
+)
+
+/* ------------------------------ Radar (5-ax) ------------------------------- */
+const RadarChart = ({ data }: { data: { [key: string]: number } }) => {
+  const categories = Object.keys(data)
+  const values = Object.values(data)
+  const maxValue = 5
+  const cx = 100
+  const cy = 100
+  const R = 64
+
+  const points = (scale = 1) =>
+    values
+      .map((v, i) => {
+        const a = (i * 2 * Math.PI) / categories.length - Math.PI / 2
+        const r = (scale * (i !== undefined ? (v / maxValue) * R : R))
+        return `${cx + r * Math.cos(a)},${cy + r * Math.sin(a)}`
+      })
+      .join(' ')
+
+  const grid = () =>
+    values
+      .map((_, i) => {
+        const a = (i * 2 * Math.PI) / categories.length - Math.PI / 2
+        return `${cx + R * Math.cos(a)},${cy + R * Math.sin(a)}`
+      })
+      .join(' ')
+
+  return (
+    <div className="relative mx-auto w-full max-w-[260px]">
+      <svg viewBox="0 0 200 200" className="h-auto w-full">
+        {/* rings */}
+        {[0.25, 0.5, 0.75, 1].map((s, i) => (
+          <polygon key={i} points={grid()} transform={`scale(${s}) translate(${(1 - s) * 100} ${(1 - s) * 100})`} fill="none" stroke="#E5E7EB" strokeWidth={1} opacity={0.45} />
+        ))}
+        {/* axis */}
+        {values.map((_, i) => {
+          const a = (i * 2 * Math.PI) / categories.length - Math.PI / 2
+          return (
+            <line key={i} x1={cx} y1={cy} x2={cx + R * Math.cos(a)} y2={cy + R * Math.sin(a)} stroke="#E5E7EB" strokeWidth={1} />
+          )
+        })}
+        {/* area */}
+        <polygon points={points(1)} fill="url(#radarFill)" stroke="#7C8CF8" strokeWidth={1.5} />
+        <defs>
+          <linearGradient id="radarFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#93C5FD" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="#C7D2FE" stopOpacity="0.22" />
+          </linearGradient>
+        </defs>
+        {/* points */}
+        {values.map((v, i) => {
+          const a = (i * 2 * Math.PI) / categories.length - Math.PI / 2
+          const x = cx + ((v / maxValue) * R) * Math.cos(a)
+          const y = cy + ((v / maxValue) * R) * Math.sin(a)
+          return <circle key={i} cx={x} cy={y} r={3} className="fill-indigo-400" />
+        })}
+        {/* labels */}
+        {categories.map((c, i) => {
+          const a = (i * 2 * Math.PI) / categories.length - Math.PI / 2
+          const x = cx + (R + 16) * Math.cos(a)
+          const y = cy + (R + 16) * Math.sin(a)
+          return (
+            <text key={i} x={x} y={y} textAnchor="middle" dominantBaseline="middle" className="fill-gray-500 text-[10px]">
+              {c}
+            </text>
+          )
+        })}
+      </svg>
+    </div>
+  )
+}
+
+/* ---------------------------- Smooth Area Chart ---------------------------- */
+const SmoothAreaChart = ({ data }: { data: { [key: string]: number } }) => {
+  const entries = Object.entries(data)
+  const maxValue = Math.max(...Object.values(data)) || 1
+  const W = 360
+  const H = 160
+  const PX = 20
+  const PY = 18
+
+  const pts = entries.map(([label, value], i) => {
+    const x = PX + (i / Math.max(entries.length - 1, 1)) * (W - PX * 2)
+    const y = H - PY - (value / maxValue) * (H - PY * 2)
+    return { x, y, label, value }
+  })
+
+  // Smooth path (Catmull–Rom → cubic Bezier)
+  const d = pts
+    .map((p, i) => {
+      if (i === 0) return `M ${p.x} ${p.y}`
+      const p0 = pts[i - 1]
+      const p1 = p
+      const cp1x = p0.x + (p1.x - p0.x) / 3
+      const cp1y = p0.y
+      const cp2x = p0.x + (p1.x - p0.x) * (2 / 3)
+      const cp2y = p1.y
+      return `C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p1.x} ${p1.y}`
+    })
+    .join(' ')
+
+  const area = `${d} L ${pts[pts.length - 1]?.x ?? PX} ${H - PY} L ${pts[0]?.x ?? PX} ${H - PY} Z`
+
+  const [iHover, setIHover] = useState<number | null>(null)
+
+  const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const rect = (e.currentTarget as SVGSVGElement).getBoundingClientRect()
+    const mx = e.clientX - rect.left
+    let ni = 0
+    let md = Infinity
+    pts.forEach((p, i) => {
+      const d = Math.abs(p.x - mx)
+      if (d < md) {
+        md = d
+        ni = i
+      }
+    })
+    setIHover(ni)
+  }
+
+  return (
+    <div className="relative mx-auto w-full max-w-[420px]">
+      <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" onMouseMove={onMove} onMouseLeave={() => setIHover(null)}>
+        {[0, 0.25, 0.5, 0.75, 1].map((r, i) => (
+          <line key={i} x1={PX} x2={W - PX} y1={H - PY - r * (H - PY * 2)} y2={H - PY - r * (H - PY * 2)} stroke="#E5E7EB" strokeWidth={1} opacity={0.5} />
+        ))}
+        <defs>
+          <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#93C5FD" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#A7F3D0" stopOpacity="0.15" />
+          </linearGradient>
+        </defs>
+        <path d={area} fill="url(#areaFill)" className="animate-draw-soft" />
+        <path d={d} fill="none" stroke="#60A5FA" strokeWidth={2} className="[filter:drop-shadow(0_1px_0_rgba(96,165,250,0.25))]" />
+        {pts.map((p, i) => (
+          <circle key={i} cx={p.x} cy={p.y} r={iHover === i ? 4.5 : 3} className="fill-sky-500 transition-all" />
+        ))}
+        {pts.map((p, i) => (
+          <text key={`x-${i}`} x={p.x} y={H - 4} textAnchor="middle" className="fill-gray-500 text-[10px]">
+            {p.label}
+          </text>
+        ))}
+      </svg>
+      {iHover !== null && (
+        <div
+          className="pointer-events-none absolute rounded-md border border-gray-200 bg-white px-2 py-1 text-[11px] text-gray-800 shadow-sm"
+          style={{ left: pts[iHover].x, top: pts[iHover].y - 28, transform: 'translate(-50%, -100%)' }}
+        >
+          <div className="font-semibold">{pts[iHover].value}</div>
+          <div className="text-gray-500">{pts[iHover].label}</div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* -------------------------------- Component -------------------------------- */
 const ResearchDetail = () => {
-  const [activeTab, setActiveTab] = useState<'info' | 'dashboard' | 'qa'>('info')
+  const [searchParams] = useSearchParams()
+  const professorName = searchParams.get('professor') || 'Unknown Professor'
+  const scholarId = searchParams.get('id') || ''
   
-  // Q&A 시스템 상태
+  const [activeTab, setActiveTab] = useState<'info' | 'dashboard' | 'qa'>('dashboard')
+  const [animateStats, setAnimateStats] = useState(false)
+
+  useEffect(() => {
+    if (activeTab === 'dashboard') {
+      const t = setTimeout(() => setAnimateStats(true), 250)
+      return () => clearTimeout(t)
+    }
+    setAnimateStats(false)
+  }, [activeTab])
+
+  // Q&A
   const [questions, setQuestions] = useState<Question[]>([
     {
       id: 1,
       author: '김학생',
-      content: '안녕하세요! 이 연구실에서 진행하는 주요 프로젝트가 궁금합니다. 특히 컴퓨터 비전 분야에서 어떤 연구를 하고 계신가요?',
+      content:
+        '안녕하세요! 이 연구실에서 진행하는 주요 프로젝트가 궁금합니다. 특히 컴퓨터 비전 분야에서 어떤 연구를 하고 계신가요?',
       timestamp: '2024-01-15 14:30',
       replies: [
         {
           id: 101,
           author: '박연구원',
-          content: '안녕하세요! 현재 자율주행차를 위한 실시간 객체 인식 시스템을 개발하고 있습니다. YOLO 기반의 모델을 개선하는 연구를 진행 중이에요.',
-          timestamp: '2024-01-15 16:45'
-        }
-      ]
+          content:
+            '안녕하세요! 현재 자율주행차를 위한 실시간 객체 인식 시스템을 개발하고 있습니다. YOLO 기반 모델을 개선 중이에요.',
+          timestamp: '2024-01-15 16:45',
+        },
+      ],
     },
-    {
-      id: 2,
-      author: '이예비',
-      content: '석사과정 지원을 준비하고 있는데, 연구실 입학을 위해 어떤 선수 지식이 필요한지 알고 싶습니다.',
-      timestamp: '2024-01-14 10:15',
-      replies: []
-    }
   ])
-  
-  const [newQuestion, setNewQuestion] = useState('')
-  const [replyInputs, setReplyInputs] = useState<{[key: number]: string}>({})
-  const [showReplies, setShowReplies] = useState<{[key: number]: boolean}>({})
-  const [showReplyForm, setShowReplyForm] = useState<{[key: number]: boolean}>({})
 
-  // 평가 대시보드 데이터
+  const [newQuestion, setNewQuestion] = useState('')
+  const [replyInputs, setReplyInputs] = useState<{ [key: number]: string }>({})
+  const [showReplies, setShowReplies] = useState<{ [key: number]: boolean }>({})
+  const [showReplyForm, setShowReplyForm] = useState<{ [key: number]: boolean }>({})
+
+  // Generate evaluation data based on professor name
+  const generateEvaluationData = (name: string) => {
+    // Simple hash function to generate consistent data for each professor
+    const hash = name.split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0)
+      return a & a
+    }, 0)
+    
+    const baseRating = 3.8 + (Math.abs(hash) % 12) / 10 // 3.8 to 5.0
+    
+    return {
+      overallRating: Math.round(baseRating * 10) / 10,
+      totalReviews: 85 + (Math.abs(hash) % 150), // 85 to 235 reviews
+      ratings: {
+        연구지도: Math.round((baseRating + (hash % 5) / 10) * 10) / 10,
+        연구환경: Math.round((baseRating + ((hash * 2) % 5) / 10) * 10) / 10,
+        진로지원: Math.round((baseRating + ((hash * 3) % 5) / 10) * 10) / 10,
+        소통: Math.round((baseRating + ((hash * 4) % 5) / 10) * 10) / 10,
+        워라밸: Math.round((baseRating + ((hash * 5) % 5) / 10) * 10) / 10,
+      },
+    }
+  }
+
   const evaluationData = {
-    overallRating: 4.3,
-    totalReviews: 127,
-    ratings: {
-      연구지도: 4.5,
-      연구환경: 4.2,
-      진로지원: 4.0,
-      소통: 4.4,
-      워라밸: 3.8
-    },
+    ...generateEvaluationData(professorName),
     recentReviews: [
       {
         id: 1,
@@ -70,471 +289,447 @@ const ResearchDetail = () => {
         rating: 5,
         comment: '교수님이 정말 친절하시고 연구 지도를 꼼꼼히 해주십니다. 논문 작성할 때도 많은 도움을 받았어요.',
         date: '2024-01-10',
-        category: '연구지도'
+        category: '연구지도',
       },
       {
         id: 2,
         author: '졸업생',
         rating: 4,
-        comment: '연구실 분위기가 좋고 선후배 관계도 원만합니다. 다만 프로젝트가 많아서 조금 바쁠 수 있어요.',
+        comment: '연구실 분위기가 좋고 선후배 관계도 원만합니다. 다만 프로젝트가 많아서 바쁠 수 있어요.',
         date: '2024-01-08',
-        category: '연구환경'
+        category: '연구환경',
       },
       {
         id: 3,
         author: '현재 재학생',
         rating: 4,
-        comment: '최신 장비와 소프트웨어를 사용할 수 있어서 연구하기 좋은 환경입니다.',
+        comment: '최신 장비와 소프트웨어를 사용할 수 있어 연구하기 좋습니다.',
         date: '2024-01-05',
-        category: '연구환경'
-      }
+        category: '연구환경',
+      },
     ],
     stats: {
       graduationRate: 92,
       avgGraduationTime: 2.3,
       jobPlacementRate: 85,
-      researchPapers: 45
+      researchPapers: 45,
+    },
+    monthlyStats: {
+      '1월': 12,
+      '2월': 15,
+      '3월': 8,
+      '4월': 20,
+      '5월': 18,
+      '6월': 25,
+    },
+  }
+
+  // Generate professor data based on URL parameters
+  const generateProfessorData = (name: string, id: string) => {
+    const hash = name.split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0)
+      return a & a
+    }, 0)
+    
+    // Sample affiliations and bio templates
+    const affiliations = [
+      'MIT', 'Stanford University', 'UC Berkeley', 'Carnegie Mellon University', 
+      'Harvard University', 'ETH Zurich', 'University of Toronto', 'Oxford University'
+    ]
+    
+    const bioTemplates = [
+      `Professor of Computer Science specializing in artificial intelligence and machine learning research.`,
+      `Leading researcher in computer vision and deep learning with extensive industry collaboration.`,
+      `Expert in robotics and autonomous systems with focus on real-world applications.`,
+      `Distinguished professor working on natural language processing and computational linguistics.`,
+      `Research focus on data mining, machine learning, and large-scale systems.`
+    ]
+    
+    return {
+      name,
+      affiliation: affiliations[Math.abs(hash) % affiliations.length],
+      email: '',
+      website: '',
+      scholar: id ? `https://scholar.google.com/citations?user=${id}` : '',
+      photo: id && id !== 'NOSCHOLARPAGE' ? 
+        `https://scholar.googleusercontent.com/citations?view_op=view_photo&user=${id}&citpid=3` :
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=128&background=e5e7eb&color=6b7280`,
+      bio: bioTemplates[Math.abs(hash) % bioTemplates.length],
+      keywords: ['artificial intelligence', 'machine learning', 'computer science', 'research'],
+      papers: [
+        {
+          title: 'Recent Advances in Machine Learning',
+          link: '#',
+          venue: 'Top-tier Conference 2024',
+        },
+        {
+          title: 'Deep Learning Applications in Computer Vision',
+          link: '#',
+          venue: 'International Journal 2023',
+        },
+        {
+          title: 'Scalable AI Systems for Real-world Problems',
+          link: '#',
+          venue: 'ACM Conference 2023',
+        },
+      ],
     }
   }
 
-  const professor = {
-    name: 'Luc Van Gool',
-    affiliation: 'ETH Zurich',
-    email: '',
-    website: 'http://www.vision.ee.ethz.ch/en/members/get_member.cgi?id=1',
-    scholar: 'https://scholar.google.com/citations?user=TwMib_QAAAAJ',
-    photo: 'https://scholar.googleusercontent.com/citations?view_op=view_photo&user=TwMib_QAAAAJ&citpid=3',
-    bio: 'Professor of Computer Vision at INSAIT Sofia University, emeritus at KU Leuven and ETHZ, Toyota Lab TRACE',
-    keywords: ['computer vision', 'machine learning', 'AI', 'autonomous cars', 'cultural heritage'],
-    papers: [
-      {
-        title: 'BSurf: Speeded up robust features',
-        link: 'https://scholar.google.com/citations?view_op=view_citation&hl=ko&user=TwMib_QAAAAJ&citation_for_view=TwMib_QAAAAJ:hSRAE-fF4OAC',
-        venue: 'Computer Vision ECCV 2006'
-      },
-      {
-        title: 'Speeded-up robust features (SURF)',
-        link: 'https://scholar.google.com/citations?view_op=view_citation&hl=ko&user=TwMib_QAAAAJ&citation_for_view=TwMib_QAAAAJ:isU91gLudPYC'
-      },
-      {
-        title: 'The Pascal Visual Object Classes (VOC) Challenge',
-        link: 'https://scholar.google.com/citations?view_op=view_citation&hl=ko&user=TwMib_QAAAAJ&citation_for_view=TwMib_QAAAAJ:Y0pCki6q_DkC'
-      }
-    ]
-  }
+  const professor = generateProfessorData(professorName, scholarId)
 
-  // 별점 렌더링 함수
   const renderStars = (rating: number, size: 'sm' | 'md' = 'sm') => {
     const stars = []
-    const sizeClass = size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'
-    
+    const sizeClass = size === 'sm' ? 'h-4 w-4' : 'h-5 w-5'
     for (let i = 1; i <= 5; i++) {
       stars.push(
-        <StarIcon
-          key={i}
-          className={`${sizeClass} ${
-            i <= rating 
-              ? 'text-yellow-500 fill-yellow-500' 
-              : 'text-gray-300'
-          }`}
-        />
+        <StarIcon key={i} className={`${sizeClass} ${i <= rating ? 'fill-yellow-500 text-yellow-500' : 'text-gray-300'}`} />,
       )
     }
     return stars
   }
 
-  // Q&A 핸들러 함수들
   const handleSubmitQuestion = () => {
-    if (newQuestion.trim()) {
-      const newQ: Question = {
-        id: Date.now(),
-        author: '익명 사용자', // 실제로는 로그인된 사용자 정보를 사용
-        content: newQuestion,
-        timestamp: new Date().toLocaleString('ko-KR'),
-        replies: []
-      }
-      setQuestions([newQ, ...questions])
-      setNewQuestion('')
+    if (!newQuestion.trim()) return
+    const newQ: Question = {
+      id: Date.now(),
+      author: '익명 사용자',
+      content: newQuestion,
+      timestamp: new Date().toLocaleString('ko-KR'),
+      replies: [],
     }
+    setQuestions([newQ, ...questions])
+    setNewQuestion('')
   }
 
-  const handleSubmitReply = (questionId: number) => {
-    const replyContent = replyInputs[questionId]
-    if (replyContent?.trim()) {
-      const newReply: Reply = {
-        id: Date.now(),
-        author: '익명 사용자',
-        content: replyContent,
-        timestamp: new Date().toLocaleString('ko-KR')
-      }
-      
-      setQuestions(questions.map(q => 
-        q.id === questionId 
-          ? { ...q, replies: [...q.replies, newReply] }
-          : q
-      ))
-      
-      setReplyInputs({ ...replyInputs, [questionId]: '' })
-      setShowReplyForm({ ...showReplyForm, [questionId]: false })
-      setShowReplies({ ...showReplies, [questionId]: true })
+  const handleSubmitReply = (qid: number) => {
+    const content = replyInputs[qid]
+    if (!content?.trim()) return
+    const newR: Reply = {
+      id: Date.now(),
+      author: '익명 사용자',
+      content,
+      timestamp: new Date().toLocaleString('ko-KR'),
     }
-  }
-
-  const toggleReplies = (questionId: number) => {
-    setShowReplies({ ...showReplies, [questionId]: !showReplies[questionId] })
-  }
-
-  const toggleReplyForm = (questionId: number) => {
-    setShowReplyForm({ ...showReplyForm, [questionId]: !showReplyForm[questionId] })
+    setQuestions((qs) => qs.map((q) => (q.id === qid ? { ...q, replies: [...q.replies, newR] } : q)))
+    setReplyInputs({ ...replyInputs, [qid]: '' })
+    setShowReplyForm({ ...showReplyForm, [qid]: false })
+    setShowReplies({ ...showReplies, [qid]: true })
   }
 
   return (
-    <div className="min-h-screen bg-white text-black py-12 px-6">
-      <div className="wrapper">
-        <div className="text-left mt-10 mb-5">
-          <Link
-            to="/research"
-            className="text-black px-3 py-1 rounded-full text-xs font-medium hover:underline bg-zinc-100"
-          >
-            ← 돌아가기
-          </Link>
-        </div>
+    <div className="min-h-screen bg-gradient-to-b from-sky-50 via-white to-white/60 px-4 py-8 text-gray-900">
+      {/* Page header */}
+      <div className="mx-auto mb-4 max-w-7xl">
+        <Link
+          to="/research"
+          className="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-medium text-gray-600 ring-1 ring-gray-200 transition-all hover:bg-white hover:shadow-sm"
+        >
+          ← 돌아가기
+        </Link>
+      </div>
 
-        {/* 프로필 카드 */}
-        <div className="bg-white rounded-xl shadow-lg border mb-8">
-          <div className="p-6 flex flex-row gap-6 items-start">
-            <img
-              src={professor.photo}
-              alt={professor.name}
-              className="w-20 h-20 rounded-lg object-cover border"
-            />
-            <div className="flex-1 space-y-2">
-              <h2 className="text-2xl font-bold">{professor.name} 교수</h2>
-              <p className="text-gray-600">{professor.affiliation}</p>
-              {professor.email && <p className="text-sm text-gray-600">{professor.email}</p>}
-
-              <div className="flex flex-wrap gap-2 text-sm mt-2">
+      {/* Profile */}
+      <div className="mx-auto mb-5 max-w-7xl">
+        <Card className="overflow-hidden">
+          <div className="flex items-start gap-6 px-5 py-5">
+            <img src={professor.photo} alt={professor.name} className="h-20 w-20 rounded-2xl border border-gray-200 object-cover" />
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold text-gray-900">{professor.name} 교수</h2>
+              <p className="mt-1 text-gray-600">{professor.affiliation}</p>
+              <div className="mt-3 flex flex-wrap gap-2 text-sm">
                 {professor.website && (
-                  <a href={professor.website} target="_blank" rel="noreferrer" className="text-[#B8DCCC] underline">
+                  <a
+                    href={professor.website}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-lg bg-sky-50 px-3 py-1.5 font-medium text-sky-700 ring-1 ring-sky-100 transition-colors hover:bg-sky-100"
+                  >
                     홈페이지
                   </a>
                 )}
                 {professor.scholar && (
-                  <a href={professor.scholar} target="_blank" rel="noreferrer" className="text-[#B8DCCC] underline">
+                  <a
+                    href={professor.scholar}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-lg bg-emerald-50 px-3 py-1.5 font-medium text-emerald-700 ring-1 ring-emerald-100 transition-colors hover:bg-emerald-100"
+                  >
                     Google Scholar
                   </a>
                 )}
               </div>
             </div>
           </div>
-
-          <div className="keywords-wrap px-6 mb-6">
-            <p className="font-semibold mb-2 text-sm">연구분야 키워드</p>
-            <div className="flex flex-wrap gap-2">
-              {professor.keywords.map((kw, idx) => (
-                <span key={idx} className="bg-[#B8DCCC]/20 text-black px-3 py-1 rounded-full text-xs font-medium">
+          <div className="px-5 pb-4">
+            <p className="mb-2 text-sm font-semibold text-gray-700">연구분야 키워드</p>
+            <div className="flex flex-wrap gap-1.5">
+              {professor.keywords.map((kw, i) => (
+                <span key={i} className="rounded-lg bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
                   {kw}
                 </span>
               ))}
             </div>
           </div>
+        </Card>
+      </div>
+
+      {/* Tabs */}
+      <div className="mx-auto mb-4 max-w-7xl">
+        <div className="flex gap-1 rounded-2xl border border-gray-200 bg-white p-1 shadow-sm">
+          {(['info', 'dashboard', 'qa'] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setActiveTab(t)}
+              className={`flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+                activeTab === t ? 'bg-sky-500 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              {t === 'info' ? '연구실 정보' : t === 'dashboard' ? '대시보드' : 'Q&A'}
+            </button>
+          ))}
         </div>
+      </div>
 
-        {/* === 탭 메뉴 === */}
-        <div className="mb-6 flex space-x-2">
-          <button
-            onClick={() => setActiveTab('info')}
-            className={`px-4 py-2 font-semibold rounded-t-md ${
-              activeTab === 'info' ? 'bg-blue-200' : 'bg-gray-200'
-            }`}
-          >
-            연구실 정보
-          </button>
-          <button
-            onClick={() => setActiveTab('dashboard')}
-            className={`px-4 py-2 font-semibold rounded-t-md ${
-              activeTab === 'dashboard' ? 'bg-blue-200' : 'bg-gray-200'
-            }`}
-          >
-            대시보드
-          </button>
-          <button
-            onClick={() => setActiveTab('qa')}
-            className={`px-4 py-2 font-semibold rounded-t-md ${
-              activeTab === 'qa' ? 'bg-blue-200' : 'bg-gray-200'
-            }`}
-          >
-            Q&A
-          </button>
-        </div>
+      {/* Content */}
+      <div className="mx-auto max-w-7xl">
+        {activeTab === 'info' && (
+          <Card className="px-5 py-5">
+            <h3 className="mb-2 text-base font-semibold">교수 소개</h3>
+            <p className="text-sm leading-relaxed text-gray-700">{professor.bio}</p>
+            <h3 className="mt-6 mb-2 text-base font-semibold">대표 논문</h3>
+            <ul className="list-inside list-disc space-y-1 text-sm text-gray-700">
+              {professor.papers.map((p, i) => (
+                <li key={i}>
+                  <a href={p.link} target="_blank" rel="noreferrer" className="text-gray-600 underline-offset-2 hover:underline">
+                    {p.title}
+                  </a>{' '}
+                  {p.venue && <span className="text-gray-500">({p.venue})</span>}
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
 
-        {/* === 탭 내용 === */}
-        <div className="research-dashboard bg-white rounded-xl border p-6 shadow-sm">
-          {activeTab === 'info' && (
-            <>
-              <h3 className="text-xl font-semibold mb-3">교수 소개</h3>
-              <p className="text-sm text-gray-700 leading-relaxed">{professor.bio}</p>
-
-              <h3 className="text-xl font-semibold mt-8 mb-3">대표 논문</h3>
-              <ul className="list-disc list-inside space-y-2 text-sm text-gray-700">
-                {professor.papers.map((paper, idx) => (
-                  <li key={idx}>
-                    <a
-                      href={paper.link}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-gray-500 hover:underline"
-                    >
-                      {paper.title}
-                    </a>{' '}
-                    {paper.venue && <span className="text-gray-500">({paper.venue})</span>}
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-
-          {activeTab === 'dashboard' && (
-            <div className="space-y-6">
-              {/* 헤더 */}
-              <div className="flex items-center gap-2 mb-6">
-                <ChartBarIcon className="w-6 h-6 text-gray-600" />
-                <h3 className="text-xl font-semibold">평가 대시보드</h3>
+        {activeTab === 'dashboard' && (
+          <div className="dashboard-wrap grid gap-3 md:grid-cols-12">
+             {/* 통계 */}
+             <Card className="md:col-span-3 animate-reveal-up">
+              <div className="px-4 py-4 text-center">
+                <AcademicCapIcon className="mx-auto mb-1 h-6 w-6 text-emerald-600" />
+                <div className="mb-1 text-xl font-bold text-gray-900">{evaluationData.stats.graduationRate}%</div>
+                <div className="text-xs text-gray-600">졸업률</div>
               </div>
-
-              {/* 전체 평점 카드 */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-lg font-semibold text-gray-800 mb-2">전체 평점</h4>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-3xl font-bold text-blue-600">{evaluationData.overallRating}</span>
-                      <div className="flex">{renderStars(Math.round(evaluationData.overallRating), 'md')}</div>
-                    </div>
-                    <p className="text-sm text-gray-600">{evaluationData.totalReviews}개의 평가</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mb-2">
-                      <StarIcon className="w-10 h-10 text-blue-600 fill-blue-600" />
-                    </div>
-                  </div>
-                </div>
+            </Card>
+            <Card className="md:col-span-3 animate-reveal-up">
+              <div className="px-4 py-4 text-center">
+                <ClockIcon className="mx-auto mb-1 h-6 w-6 text-sky-600" />
+                <div className="mb-1 text-xl font-bold text-gray-900">{evaluationData.stats.avgGraduationTime}년</div>
+                <div className="text-xs text-gray-600">평균 졸업기간</div>
               </div>
-
-              {/* 세부 평점 */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {Object.entries(evaluationData.ratings).map(([category, rating]) => (
-                  <div key={category} className="bg-white border border-gray-200 rounded-lg p-4">
-                    <h5 className="font-semibold text-gray-800 mb-2">{category}</h5>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xl font-bold text-gray-700">{rating}</span>
-                      <div className="flex">{renderStars(Math.round(rating))}</div>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-blue-500 h-2 rounded-full transition-all duration-300" 
-                        style={{ width: `${(rating / 5) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                ))}
+            </Card>
+            <Card className="md:col-span-3 animate-reveal-up">
+              <div className="px-4 py-4 text-center">
+                <UserGroupIcon className="mx-auto mb-1 h-6 w-6 text-violet-600" />
+                <div className="mb-1 text-xl font-bold text-gray-900">{evaluationData.stats.jobPlacementRate}%</div>
+                <div className="text-xs text-gray-600">취업률</div>
               </div>
-
-              {/* 통계 카드 */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-white border border-gray-200 rounded-lg p-4 text-center">
-                  <AcademicCapIcon className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-gray-800">{evaluationData.stats.graduationRate}%</div>
-                  <div className="text-sm text-gray-600">졸업률</div>
-                </div>
-                <div className="bg-white border border-gray-200 rounded-lg p-4 text-center">
-                  <ClockIcon className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-gray-800">{evaluationData.stats.avgGraduationTime}년</div>
-                  <div className="text-sm text-gray-600">평균 졸업기간</div>
-                </div>
-                <div className="bg-white border border-gray-200 rounded-lg p-4 text-center">
-                  <UserGroupIcon className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-gray-800">{evaluationData.stats.jobPlacementRate}%</div>
-                  <div className="text-sm text-gray-600">취업률</div>
-                </div>
-                <div className="bg-white border border-gray-200 rounded-lg p-4 text-center">
-                  <ChartBarIcon className="w-8 h-8 text-orange-600 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-gray-800">{evaluationData.stats.researchPapers}</div>
-                  <div className="text-sm text-gray-600">연구논문 수</div>
-                </div>
+            </Card>
+            <Card className="md:col-span-3 animate-reveal-up">
+              <div className="px-4 py-4 text-center">
+                <DocumentTextIcon className="mx-auto mb-1 h-6 w-6 text-amber-600" />
+                <div className="mb-1 text-xl font-bold text-gray-900">{evaluationData.stats.researchPapers}</div>
+                <div className="text-xs text-gray-600">연구논문 수</div>
               </div>
+            </Card>
 
-              {/* 최근 리뷰 */}
-              <div className="bg-white border border-gray-200 rounded-lg p-6">
-                <h4 className="text-lg font-semibold text-gray-800 mb-4">최근 평가</h4>
-                <div className="space-y-4">
-                  {evaluationData.recentReviews.map((review) => (
-                    <div key={review.id} className="border-b border-gray-100 pb-4 last:border-b-0 last:pb-0">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <UserCircleIcon className="w-6 h-6 text-gray-400" />
-                          <span className="font-semibold text-gray-800">{review.author}</span>
-                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
-                            {review.category}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <div className="flex">{renderStars(review.rating)}</div>
-                          <span className="text-sm text-gray-500 ml-2">{review.date}</span>
-                        </div>
+            {/* 레이더 */}
+            <Card className="md:col-span-6 animate-reveal-up" title="평가 영역별 분석">
+              <div className="px-2">
+                <RadarChart data={evaluationData.ratings} />
+              </div>
+            </Card>
+
+          
+
+            {/* 최근 리뷰 (컴팩트, 스크롤) */}
+            <Card className="md:col-span-6 animate-reveal-up" title="최근 평가">
+              <div className="max-h-64 space-y-2 overflow-auto px-4 pb-4">
+                {evaluationData.recentReviews.map((r) => (
+                  <div key={r.id} className="rounded-lg border border-gray-100 p-2 transition-colors hover:bg-gray-50">
+                    <div className="mb-0.5 flex items-start justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-gray-900">{r.author}</span>
+                        <span className="rounded-full bg-sky-100 px-1.5 py-0.5 text-xs font-medium text-sky-700">
+                          {r.category}
+                        </span>
                       </div>
-                      <p className="text-gray-700 text-sm leading-relaxed ml-8">{review.comment}</p>
+                      <div className="flex items-center gap-1">
+                        <div className="flex gap-0.5">{renderStars(r.rating)}</div>
+                        <span className="text-xs text-gray-500">{r.date}</span>
+                      </div>
                     </div>
-                  ))}
+                    <p className="text-xs leading-relaxed text-gray-700">{r.comment}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            {/* 전체 평점 */}
+            <Card className="md:col-span-4 animate-reveal-up bg-gradient-to-br from-sky-50 to-indigo-50" >
+              <div className="flex items-center justify-between px-4 py-4">
+                <div>
+                  <h4 className="mb-1 text-xs font-semibold text-gray-900">전체 평점</h4>
+                  <div className="flex items-center gap-2 pt-6">
+                    <span className="text-3xl font-bold text-sky-600">{evaluationData.overallRating}</span>
+                    <div className="flex gap-1">{renderStars(Math.round(evaluationData.overallRating), 'md')}</div>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-600">{evaluationData.totalReviews}개의 평가</p>
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <button className="w-full bg-gray-50 hover:bg-gray-100 text-gray-700 py-2 px-4 rounded-lg font-medium transition-colors">
-                    더 많은 평가 보기
-                  </button>
+                <div className="flex h-12 w-12 mt-6 items-center justify-center rounded-full bg-sky-500 shadow-sm">
+                  <StarIcon className="h-6 w-6 text-white" />
                 </div>
               </div>
-
-              {/* 평가 작성 버튼 */}
-              <div className="text-center">
-                <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors shadow-sm">
-                  평가 작성하기
-                </button>
+            </Card>
+              {/* 활동 추이 */}
+              <Card className="md:col-span-4 animate-reveal-up" title="활동 추이">
+              <div className="px-2 pb-3">
+                <SmoothAreaChart data={evaluationData.monthlyStats} />
               </div>
-            </div>
-          )}
+            </Card>
+          </div>
+        )}
 
-          {activeTab === 'qa' && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-2 mb-6">
-                <ChatBubbleLeftIcon className="w-6 h-6 text-gray-600" />
-                <h3 className="text-xl font-semibold">Q&A</h3>
+        {activeTab === 'qa' && (
+          <div className="space-y-4">
+            <Card className="px-4 py-4">
+              <div className="mb-3 flex items-center gap-2">
+                <ChatBubbleLeftIcon className="h-5 w-5 text-gray-600" />
+                <h3 className="text-base font-semibold">Q&amp;A</h3>
                 <span className="text-sm text-gray-500">({questions.length}개의 질문)</span>
               </div>
-
-              {/* 새 질문 작성 */}
-              <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                <h4 className="font-semibold mb-3">새 질문 작성</h4>
+              <div className="rounded-xl bg-gray-50 p-3">
+                <h4 className="mb-2 font-semibold">새 질문 작성</h4>
                 <textarea
                   value={newQuestion}
                   onChange={(e) => setNewQuestion(e.target.value)}
                   placeholder="연구실에 대해 궁금한 점을 질문해보세요..."
-                  className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  rows={3}
+                  className="h-20 w-full resize-none rounded-lg border border-gray-300 p-3 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-sky-500"
                 />
-                <div className="flex justify-end mt-3">
+                <div className="mt-2 flex justify-end">
                   <button
                     onClick={handleSubmitQuestion}
                     disabled={!newQuestion.trim()}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                    className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-gray-300"
                   >
                     질문 등록
                   </button>
                 </div>
               </div>
+            </Card>
 
-              {/* 질문 목록 */}
-              <div className="space-y-4">
-                {questions.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <ChatBubbleLeftIcon className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    <p>아직 질문이 없습니다. 첫 번째 질문을 남겨보세요!</p>
-                  </div>
-                ) : (
-                  questions.map((question) => (
-                    <div key={question.id} className="bg-white border border-gray-200 rounded-lg p-4">
-                      {/* 질문 */}
-                      <div className="flex items-start gap-3 mb-3">
-                        <UserCircleIcon className="w-8 h-8 text-gray-400 flex-shrink-0 mt-1" />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold text-gray-800">{question.author}</span>
-                            <span className="text-xs text-gray-500">{question.timestamp}</span>
-                          </div>
-                          <p className="text-gray-700 leading-relaxed">{question.content}</p>
+            <div className="space-y-3">
+              {questions.length === 0 ? (
+                <Card className="px-6 py-8 text-center text-gray-500">
+                  <ChatBubbleLeftIcon className="mx-auto mb-3 h-10 w-10 text-gray-300" />
+                  아직 질문이 없습니다. 첫 번째 질문을 남겨보세요!
+                </Card>
+              ) : (
+                questions.map((q) => (
+                  <Card key={q.id} className="px-4 py-4">
+                    <div className="mb-3 flex items-start gap-3">
+                      <UserCircleIcon className="mt-1 h-7 w-7 flex-shrink-0 text-gray-400" />
+                      <div className="flex-1">
+                        <div className="mb-0.5 flex items-center gap-2">
+                          <span className="font-semibold text-gray-800">{q.author}</span>
+                          <span className="text-xs text-gray-500">{q.timestamp}</span>
                         </div>
+                        <p className="leading-relaxed text-gray-700">{q.content}</p>
                       </div>
+                    </div>
 
-                      {/* 답글 토글 및 답글 작성 버튼 */}
-                      <div className="flex items-center gap-4 mt-3 pt-3 border-t border-gray-100">
-                        {question.replies.length > 0 && (
-                          <button
-                            onClick={() => toggleReplies(question.id)}
-                            className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
-                          >
-                            {showReplies[question.id] ? (
-                              <ChevronUpIcon className="w-4 h-4" />
-                            ) : (
-                              <ChevronDownIcon className="w-4 h-4" />
-                            )}
-                            답글 {question.replies.length}개
-                          </button>
-                        )}
+                    <div className="mt-2 flex items-center gap-4 border-t border-gray-100 pt-2">
+                      {q.replies.length > 0 && (
                         <button
-                          onClick={() => toggleReplyForm(question.id)}
-                          className="text-sm text-gray-600 hover:text-gray-800"
+                          onClick={() => setShowReplies({ ...showReplies, [q.id]: !showReplies[q.id] })}
+                          className="flex items-center gap-1 text-sm text-sky-600 hover:text-sky-800"
                         >
-                          답글 작성
+                          {showReplies[q.id] ? <ChevronUpIcon className="h-4 w-4" /> : <ChevronDownIcon className="h-4 w-4" />}
+                          답글 {q.replies.length}개
                         </button>
-                      </div>
-
-                      {/* 답글 작성 폼 */}
-                      {showReplyForm[question.id] && (
-                        <div className="mt-4 ml-11 bg-gray-50 rounded-lg p-3">
-                          <textarea
-                            value={replyInputs[question.id] || ''}
-                            onChange={(e) => setReplyInputs({
-                              ...replyInputs,
-                              [question.id]: e.target.value
-                            })}
-                            placeholder="답글을 작성해주세요..."
-                            className="w-full p-2 border border-gray-300 rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            rows={2}
-                          />
-                          <div className="flex justify-end gap-2 mt-2">
-                            <button
-                              onClick={() => toggleReplyForm(question.id)}
-                              className="text-sm text-gray-600 hover:text-gray-800 px-3 py-1"
-                            >
-                              취소
-                            </button>
-                            <button
-                              onClick={() => handleSubmitReply(question.id)}
-                              disabled={!replyInputs[question.id]?.trim()}
-                              className="bg-blue-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-                            >
-                              답글 등록
-                            </button>
-                          </div>
-                        </div>
                       )}
+                      <button
+                        onClick={() => setShowReplyForm({ ...showReplyForm, [q.id]: !showReplyForm[q.id] })}
+                        className="text-sm text-gray-600 hover:text-gray-800"
+                      >
+                        답글 작성
+                      </button>
+                    </div>
 
-                      {/* 답글 목록 */}
-                      {showReplies[question.id] && question.replies.length > 0 && (
-                        <div className="mt-4 ml-11 space-y-3">
-                          {question.replies.map((reply) => (
-                            <div key={reply.id} className="bg-gray-50 rounded-lg p-3">
-                              <div className="flex items-start gap-3">
-                                <UserCircleIcon className="w-6 h-6 text-gray-400 flex-shrink-0 mt-1" />
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <span className="font-semibold text-gray-800 text-sm">{reply.author}</span>
-                                    <span className="text-xs text-gray-500">{reply.timestamp}</span>
-                                  </div>
-                                  <p className="text-gray-700 text-sm leading-relaxed">{reply.content}</p>
+                    {showReplyForm[q.id] && (
+                      <div className="ml-10 mt-3 rounded-lg bg-gray-50 p-3">
+                        <textarea
+                          value={replyInputs[q.id] || ''}
+                          onChange={(e) => setReplyInputs({ ...replyInputs, [q.id]: e.target.value })}
+                          placeholder="답글을 작성해주세요..."
+                          className="h-16 w-full resize-none rounded border border-gray-300 p-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        />
+                        <div className="mt-2 flex justify-end gap-2">
+                          <button
+                            onClick={() => setShowReplyForm({ ...showReplyForm, [q.id]: false })}
+                            className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+                          >
+                            취소
+                          </button>
+                          <button
+                            onClick={() => handleSubmitReply(q.id)}
+                            disabled={!replyInputs[q.id]?.trim()}
+                            className="rounded bg-sky-600 px-3 py-1 text-sm font-semibold text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                          >
+                            답글 등록
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {showReplies[q.id] && q.replies.length > 0 && (
+                      <div className="ml-10 mt-3 space-y-2">
+                        {q.replies.map((r) => (
+                          <div key={r.id} className="rounded-lg bg-gray-50 p-3">
+                            <div className="flex items-start gap-3">
+                              <UserCircleIcon className="mt-1 h-5 w-5 flex-shrink-0 text-gray-400" />
+                              <div className="flex-1">
+                                <div className="mb-0.5 flex items-center gap-2">
+                                  <span className="text-sm font-semibold text-gray-800">{r.author}</span>
+                                  <span className="text-xs text-gray-500">{r.timestamp}</span>
                                 </div>
+                                <p className="text-sm leading-relaxed text-gray-700">{r.content}</p>
                               </div>
                             </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </Card>
+                ))
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
+
+      {/* Motion & helpers */}
+      <style>{`
+        @keyframes reveal-up { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: translateY(0) } }
+        .animate-reveal-up { animation: reveal-up .5s ease both }
+        @keyframes pop-fade { 0% { opacity: 0; transform: scale(.98) } 100% { opacity: 1; transform: scale(1) } }
+        .animate-pop-fade { animation: pop-fade .45s ease both }
+        @keyframes draw-soft { from { opacity:.6 } to { opacity:1 } }
+        .animate-draw-soft { animation: draw-soft .6s ease both }
+        @media (prefers-reduced-motion: reduce) {
+          .animate-reveal-up, .animate-pop-fade, .animate-draw-soft { animation: none !important }
+        }
+      `}</style>
     </div>
   )
 }
