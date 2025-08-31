@@ -1,48 +1,32 @@
-// API 기본 설정
-const API_BASE_URL = 'http://localhost:8080' // 백엔드 서버 URL
+import { apiRequest, API_ENDPOINTS, parseApiResponse } from './config'
 
 // API 클라이언트 함수
 const apiClient = {
   get: async (url: string) => {
-    const accessToken = localStorage.getItem('accessToken')
-    const tokenType = localStorage.getItem('tokenType') || 'Bearer'
-    console.log('GET 요청 URL:', `${API_BASE_URL}${url}`)
-    console.log('GET 요청 토큰:', accessToken)
+    console.log('GET 요청 URL:', url)
     
-    const response = await fetch(`${API_BASE_URL}${url}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(accessToken && { Authorization: `${tokenType} ${accessToken}` })
-      }
+    const response = await apiRequest(url, {
+      method: 'GET'
     })
     
     console.log('GET 응답 상태:', response.status)
     
     if (!response.ok) {
-      const errorText = await response.text()
-      console.log('GET 에러 응답:', errorText)
-      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`)
+      const errorData = await parseApiResponse(response)
+      console.log('GET 에러 응답:', errorData)
+      throw new Error(`HTTP error! status: ${response.status}, message: ${JSON.stringify(errorData)}`)
     }
     
-    const data = await response.json()
+    const data = await parseApiResponse(response)
     console.log('GET 성공 응답:', data) // 디버깅용
     return data
   },
 
   post: async (url: string, data: any) => {
-    const accessToken = localStorage.getItem('accessToken')
-    const tokenType = localStorage.getItem('tokenType') || 'Bearer'
-    console.log('POST 요청 토큰:', accessToken)
-    console.log('POST 요청 토큰 타입:', tokenType)
     console.log('POST 요청 데이터:', data)
     
-    const response = await fetch(`${API_BASE_URL}${url}`, {
+    const response = await apiRequest(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(accessToken && { Authorization: `${tokenType} ${accessToken}` })
-      },
       body: JSON.stringify(data)
     })
     
@@ -50,8 +34,8 @@ const apiClient = {
     console.log('POST 응답 헤더:', Object.fromEntries(response.headers.entries()))
     
     if (!response.ok) {
-      const errorText = await response.text()
-      console.log('POST 에러 응답:', errorText)
+      const errorData = await parseApiResponse(response)
+      console.log('POST 에러 응답:', errorData)
       console.log('POST 에러 상태:', response.status)
       console.log('POST 에러 헤더:', Object.fromEntries(response.headers.entries()))
       
@@ -168,7 +152,7 @@ export interface CommentUpdateRequestDto {
 export const postsApi = {
   // 전체 게시글 조회
   getAllPosts: async (): Promise<PostResponseDto[]> => {
-    const response = await apiClient.get('/api/posts')
+    const response = await apiClient.get(API_ENDPOINTS.POSTS.BASE)
     // 응답이 배열이면 그대로 반환, 객체이고 data 필드가 있으면 data 반환
     if (Array.isArray(response)) {
       return response
@@ -182,7 +166,7 @@ export const postsApi = {
 
   // 게시글 상세 조회
   getPostById: async (id: number): Promise<PostResponseDto> => {
-    const response = await apiClient.get(`/api/posts/${id}`)
+    const response = await apiClient.get(API_ENDPOINTS.POSTS.BY_ID(id))
     if (response && typeof response === 'object' && 'data' in response) {
       return response.data
     }
@@ -204,7 +188,7 @@ export const postsApi = {
 
   // 게시글 작성
   createPost: async (postData: PostRequestDto): Promise<number> => {
-    const response = await apiClient.post('/api/posts', postData)
+    const response = await apiClient.post(API_ENDPOINTS.POSTS.BASE, postData)
     if (response && typeof response === 'object' && 'data' in response) {
       return response.data
     }

@@ -1,7 +1,4 @@
-// API 기본 설정
-const API_BASE_URL = 'http://localhost:8080' // 백엔드 서버 URL
-
-// auth.ts에서 getCurrentUser 함수 import
+import { apiRequest, API_ENDPOINTS, parseApiResponse } from './config'
 import { getCurrentUser } from './auth'
 
 // 권한 에러 체크 헬퍼
@@ -17,49 +14,38 @@ const isAuthError = (error: any): boolean => {
 // API 클라이언트 함수
 const apiClient = {
   get: async (url: string) => {
-    const accessToken = localStorage.getItem('accessToken')
-    const tokenType = localStorage.getItem('tokenType') || 'Bearer'
-    
-    const response = await fetch(`${API_BASE_URL}${url}`, {
+    const response = await apiRequest(url, {
       method: 'GET',
       headers: {
-        'accept': '*/*',
-        ...(accessToken && { Authorization: `${tokenType} ${accessToken}` })
+        'accept': '*/*'
       }
     })
     
     if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`)
+      const errorData = await parseApiResponse(response)
+      throw new Error(`HTTP error! status: ${response.status}, message: ${JSON.stringify(errorData)}`)
     }
     
-    return await response.json()
+    return await parseApiResponse(response)
   },
 
   post: async (url: string, data?: any) => {
-    const accessToken = localStorage.getItem('accessToken')
-    const tokenType = localStorage.getItem('tokenType') || 'Bearer'
-    
-    const headers: Record<string, string> = {
-      'accept': '*/*',
-      ...(accessToken && { Authorization: `${tokenType} ${accessToken}` })
-    }
-    
     const fetchOptions: RequestInit = {
       method: 'POST',
-      headers
+      headers: {
+        'accept': '*/*'
+      }
     }
     
     if (data !== undefined && data !== null) {
-      headers['Content-Type'] = 'application/json'
       fetchOptions.body = JSON.stringify(data)
     }
     
-    const response = await fetch(`${API_BASE_URL}${url}`, fetchOptions)
+    const response = await apiRequest(url, fetchOptions)
     
     if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`)
+      const errorData = await parseApiResponse(response)
+      throw new Error(`HTTP error! status: ${response.status}, message: ${JSON.stringify(errorData)}`)
     }
     
     // 응답이 비어있는지 확인
@@ -68,20 +54,16 @@ const apiClient = {
   },
 
   delete: async (url: string) => {
-    const accessToken = localStorage.getItem('accessToken')
-    const tokenType = localStorage.getItem('tokenType') || 'Bearer'
-    
-    const response = await fetch(`${API_BASE_URL}${url}`, {
+    const response = await apiRequest(url, {
       method: 'DELETE',
       headers: {
-        'accept': '*/*',
-        ...(accessToken && { Authorization: `${tokenType} ${accessToken}` })
+        'accept': '*/*'
       }
     })
     
     if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`)
+      const errorData = await parseApiResponse(response)
+      throw new Error(`HTTP error! status: ${response.status}, message: ${JSON.stringify(errorData)}`)
     }
     
     // DELETE는 보통 빈 응답이므로 응답이 있을 때만 파싱
@@ -160,7 +142,7 @@ export const messagesApi = {
   // 받은 쪽지 목록 조회
   getReceivedMessages: async (): Promise<MessageResponseDto[]> => {
     try {
-      const response = await apiClient.get('/api/messages/received')
+      const response = await apiClient.get(API_ENDPOINTS.MESSAGES.RECEIVED)
       return Array.isArray(response) ? response : []
     } catch (error) {
       if (isAuthError(error)) {
@@ -174,7 +156,7 @@ export const messagesApi = {
   // 보낸 쪽지 목록 조회
   getSentMessages: async (): Promise<MessageResponseDto[]> => {
     try {
-      const response = await apiClient.get('/api/messages/sent')
+      const response = await apiClient.get(API_ENDPOINTS.MESSAGES.SENT)
       return Array.isArray(response) ? response : []
     } catch (error) {
       if (isAuthError(error)) {
@@ -187,27 +169,27 @@ export const messagesApi = {
 
   // 쪽지 단건 조회
   getMessageById: async (id: number): Promise<MessageResponseDto> => {
-    const response = await apiClient.get(`/api/messages/${id}`)
+    const response = await apiClient.get(`${API_ENDPOINTS.MESSAGES.BASE}/${id}`)
     return response
   },
 
   // 쪽지 보내기
   sendMessage: async (messageData: MessageRequestDto): Promise<MessageResponseDto> => {
     console.log('쪽지 전송 시작:', messageData)
-    const response = await apiClient.post('/api/messages', messageData)
+    const response = await apiClient.post(API_ENDPOINTS.MESSAGES.SEND, messageData)
     console.log('쪽지 전송 완료:', response)
     return response
   },
 
   // 쪽지 읽음 처리
   markAsRead: async (id: number): Promise<{ success: boolean }> => {
-    await apiClient.post(`/api/messages/${id}/read`)
+    await apiClient.post(`${API_ENDPOINTS.MESSAGES.BASE}/${id}/read`)
     return { success: true }
   },
 
   // 쪽지 삭제
   deleteMessage: async (id: number): Promise<{ success: boolean }> => {
-    await apiClient.delete(`/api/messages/${id}`)
+    await apiClient.delete(`${API_ENDPOINTS.MESSAGES.BASE}/${id}`)
     return { success: true }
   },
 
@@ -293,20 +275,29 @@ export const messagesApi = {
 export const messageAuthApi = {
   // 사용자 등록 (쪽지 권한 5회 추가)
   grantAuthority: async (userId: number): Promise<MessageAuthResponseDto> => {
-    const response = await apiClient.post(`/api/message-auth/grant/${userId}`)
+    const response = await apiClient.post(API_ENDPOINTS.MESSAGE_AUTH.GRANT(userId))
     return response
   },
 
   // 쪽지 사용 (count 1회 차감)
   useMessage: async (userId: number): Promise<string> => {
-    const response = await apiClient.post(`/api/message-auth/use/${userId}`)
+    const response = await apiClient.post(API_ENDPOINTS.MESSAGE_AUTH.USE(userId))
     return response || "쪽지 1회 사용 완료"
   },
 
   // 남은 쪽지 개수 조회
   getMessageCount: async (userId: number): Promise<MessageAuthResponseDto> => {
-    const response = await apiClient.get(`/api/message-auth/count/${userId}`)
-    return response
+    try {
+      const response = await apiClient.get(API_ENDPOINTS.MESSAGE_AUTH.COUNT(userId))
+      return response
+    } catch (error) {
+      console.error(`사용자 ${userId}의 쪽지 개수 조회 실패:`, error)
+      // 백엔드 에러 발생 시 기본값 반환 (권한 없음으로 처리)
+      return {
+        userId: userId,
+        count: 0
+      }
+    }
   },
 
   // 전체 사용자 조회 (users 테이블에서)
@@ -338,7 +329,7 @@ export const messageAuthApi = {
     } catch (error) {
       console.error('전체 사용자 조회 실패:', error)
       // 실패시 기존 방식으로 fallback
-      const response = await apiClient.get('/api/message-auth/all')
+      const response = await apiClient.get(API_ENDPOINTS.MESSAGE_AUTH.ALL)
       return Array.isArray(response) ? response : []
     }
   },

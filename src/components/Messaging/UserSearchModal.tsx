@@ -44,8 +44,8 @@ const UserSearchModal = ({ isOpen, onClose, onSelectUser }: UserSearchModalProps
       setLoading(true)
       setError(null)
       
-      // /api/users에서 직접 사용자 정보 가져오기
-      const response = await fetch('http://localhost:8080/api/users', {
+      // /api/users에서 직접 사용자 정보 가져오기 (프록시 사용)
+      const response = await fetch('/api/users', {
         method: 'GET',
         headers: {
           'accept': '*/*',

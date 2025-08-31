@@ -1,21 +1,16 @@
-// API 기본 설정
-const API_BASE_URL = 'http://localhost:8080' // 백엔드 서버 URL
+import { apiRequest, API_ENDPOINTS, parseApiResponse } from './config'
 
 // API 클라이언트 함수 (멀티파트 폼 데이터용)
 const apiClient = {
   // 멀티파트 폼 데이터 전송 (이미지 업로드용)
   postMultipart: async (url: string, formData: FormData) => {
-    const accessToken = localStorage.getItem('accessToken')
-    const tokenType = localStorage.getItem('tokenType') || 'Bearer'
+    console.log('POST Multipart 요청 URL:', url)
     
-    console.log('POST Multipart 요청 URL:', `${API_BASE_URL}${url}`)
-    console.log('POST Multipart 요청 토큰:', accessToken)
-    
-    const response = await fetch(`${API_BASE_URL}${url}`, {
+    const response = await apiRequest(url, {
       method: 'POST',
       headers: {
         // Content-Type을 설정하지 않음 - 브라우저가 자동으로 multipart/form-data로 설정
-        ...(accessToken && { Authorization: `${tokenType} ${accessToken}` })
+        // Authorization은 apiRequest에서 자동 처리
       },
       body: formData
     })
@@ -23,95 +18,73 @@ const apiClient = {
     console.log('POST Multipart 응답 상태:', response.status)
     
     if (!response.ok) {
-      const errorText = await response.text()
-      console.log('POST Multipart 에러 응답:', errorText)
-      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`)
+      const errorData = await parseApiResponse(response)
+      console.log('POST Multipart 에러 응답:', errorData)
+      throw new Error(`HTTP error! status: ${response.status}, message: ${JSON.stringify(errorData)}`)
     }
     
-    const result = await response.json()
+    const result = await parseApiResponse(response)
     console.log('POST Multipart 성공 응답:', result)
     return result
   },
 
   // PUT 멀티파트 폼 데이터 전송 (이미지 수정용)
   putMultipart: async (url: string, formData: FormData) => {
-    const accessToken = localStorage.getItem('accessToken')
-    const tokenType = localStorage.getItem('tokenType') || 'Bearer'
+    console.log('PUT Multipart 요청 URL:', url)
     
-    console.log('PUT Multipart 요청 URL:', `${API_BASE_URL}${url}`)
-    console.log('PUT Multipart 요청 토큰:', accessToken)
-    
-    const response = await fetch(`${API_BASE_URL}${url}`, {
+    const response = await apiRequest(url, {
       method: 'PUT',
-      headers: {
-        // Content-Type을 설정하지 않음 - 브라우저가 자동으로 multipart/form-data로 설정
-        ...(accessToken && { Authorization: `${tokenType} ${accessToken}` })
-      },
       body: formData
     })
     
     console.log('PUT Multipart 응답 상태:', response.status)
     
     if (!response.ok) {
-      const errorText = await response.text()
-      console.log('PUT Multipart 에러 응답:', errorText)
-      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`)
+      const errorData = await parseApiResponse(response)
+      console.log('PUT Multipart 에러 응답:', errorData)
+      throw new Error(`HTTP error! status: ${response.status}, message: ${JSON.stringify(errorData)}`)
     }
     
-    const result = await response.json()
+    const result = await parseApiResponse(response)
     console.log('PUT Multipart 성공 응답:', result)
     return result
   },
 
   // GET 요청
   get: async (url: string) => {
-    const accessToken = localStorage.getItem('accessToken')
-    const tokenType = localStorage.getItem('tokenType') || 'Bearer'
+    console.log('GET 요청 URL:', url)
     
-    console.log('GET 요청 URL:', `${API_BASE_URL}${url}`)
-    
-    const response = await fetch(`${API_BASE_URL}${url}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(accessToken && { Authorization: `${tokenType} ${accessToken}` })
-      }
+    const response = await apiRequest(url, {
+      method: 'GET'
     })
     
     console.log('GET 응답 상태:', response.status)
     
     if (!response.ok) {
-      const errorText = await response.text()
-      console.log('GET 에러 응답:', errorText)
-      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`)
+      const errorData = await parseApiResponse(response)
+      console.log('GET 에러 응답:', errorData)
+      throw new Error(`HTTP error! status: ${response.status}, message: ${JSON.stringify(errorData)}`)
     }
     
-    const data = await response.json()
+    const data = await parseApiResponse(response)
     console.log('GET 성공 응답:', data)
     return data
   },
 
   // DELETE 요청
   delete: async (url: string) => {
-    const accessToken = localStorage.getItem('accessToken')
-    const tokenType = localStorage.getItem('tokenType') || 'Bearer'
+    console.log('DELETE 요청 URL:', url)
     
-    console.log('DELETE 요청 URL:', `${API_BASE_URL}${url}`)
-    
-    const response = await fetch(`${API_BASE_URL}${url}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(accessToken && { Authorization: `${tokenType} ${accessToken}` })
-      }
+    const response = await apiRequest(url, {
+      method: 'DELETE'
     })
     
     console.log('DELETE 응답 상태:', response.status)
     
     if (!response.ok) {
-      const errorText = await response.text()
-      console.log('DELETE 에러 응답:', errorText)
-      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`)
+      const errorData = await parseApiResponse(response)
+      console.log('DELETE 에러 응답:', errorData)
+      throw new Error(`HTTP error! status: ${response.status}, message: ${JSON.stringify(errorData)}`)
     }
     
     // 응답이 있으면 JSON으로 파싱, 없으면 빈 객체 반환
