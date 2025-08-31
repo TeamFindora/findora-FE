@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { isAuthenticated, getCurrentUser } from '../../api'
+import { BeakerIcon, UserGroupIcon, AcademicCapIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import './Home.css'
 
 const carouselImages = [
@@ -23,19 +24,19 @@ const carouselImages = [
 const introCards = [
   {
     id: 1,
-    icon: '🔬',
+    icon: BeakerIcon,
     title: '연구실 / 교수평가',
     description: 'Find detailed information about research labs and professor evaluations to make informed decisions about your academic path.'
   },
   {
     id: 2,
-    icon: '👥',
+    icon: UserGroupIcon,
     title: '커뮤니티',
     description: 'Connect with fellow students, alumni, and academic communities to share experiences and build networks.'
   },
   {
     id: 3,
-    icon: '🎓',
+    icon: AcademicCapIcon,
     title: '입시관',
     description: 'Access comprehensive admission information, requirements, and guidance for universities worldwide.'
   }
@@ -167,9 +168,7 @@ const Home = () => {
                 className="bg-gray-800/50 w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               />
               <button className="bg-gray-100/0 text-white py-3 rounded-lg font-semibold transition-colors text-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="size-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-                </svg>
+                <MagnifyingGlassIcon className="w-5 h-5" strokeWidth={3} />
               </button>
             </div>
           </div>
@@ -189,15 +188,18 @@ const Home = () => {
       {/* Intro Cards */}
       <section className="py-12 px-8 bg-white">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {introCards.map((card) => (
-            <div key={card.id} className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 p-6 border border-gray-100">
-              <div className="text-3xl mb-3 group-hover:scale-110 transition-transform duration-300">
-                {card.icon}
+          {introCards.map((card) => {
+            const IconComponent = card.icon;
+            return (
+              <div key={card.id} className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 p-6 border border-gray-100">
+                <div className="mb-3 group-hover:scale-110 transition-transform duration-300">
+                  <IconComponent className="w-8 h-8 text-gray-700" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">{card.title}</h3>
+                <p className="text-gray-600 text-sm leading-relaxed">{card.description}</p>
               </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">{card.title}</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">{card.description}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
