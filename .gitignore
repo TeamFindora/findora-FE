@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Vite
+.vite
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -23,12 +26,13 @@ dist-ssr
 *.sln
 *.sw?
 
-# Environment variables
+# Environment variables (로컬 개발용만 제외)
 .env
 .env.local
-.env.development
-.env.production
 .env.test
 
 # Claude configuration files
 CLAUDE.md
+
+# Editor-specific files
+.cursorrules

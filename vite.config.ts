@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://13.209.35.248:8080',
+        target: 'http://localhost:8080',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path,
@@ -16,7 +16,7 @@ export default defineConfig({
             console.log('프록시 에러:', err);
           });
           proxy.on('proxyReq', (proxyReq, req, res) => {
-            console.log('프록시 요청:', req.method, req.url, '→', `http://13.209.35.248:8080${req.url}`);
+            console.log('프록시 요청:', req.method, req.url, '→', `http://localhost:8080${req.url}`);
           });
           proxy.on('proxyRes', (proxyRes, req, res) => {
             console.log('프록시 응답:', req.method, req.url, '상태:', proxyRes.statusCode);

@@ -4,7 +4,7 @@ const isDevelopment = import.meta.env.DEV
 // 기본 API URL 설정
 export const API_BASE_URL = isDevelopment 
   ? '' // 개발 환경에서는 Vite 프록시 사용 (빈 문자열)
-  : import.meta.env.VITE_API_URL || 'http://13.209.35.248:8080'
+  : import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
 // API 엔드포인트들
 export const API_ENDPOINTS = {

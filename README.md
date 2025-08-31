@@ -115,10 +115,31 @@ npm install
 yarn install
 ```
 
+### 환경 변수 설정
+첫 실행 전에 환경 변수 파일을 설정해야 합니다:
+
+```bash
+# .env.example 파일을 복사하여 .env.local 생성
+cp .env.example .env.local
+```
+
+| 파일 | 용도 | Git 추적 |
+|------|------|----------|
+| `.env.example` | 환경 변수 템플릿 | ✅ |
+| `.env.local` | 로컬 개발용 설정 | ❌ |
+| `.env.development` | 개발 서버용 설정 | ✅ |
+| `.env.production` | 배포용 설정 | ✅ |
+
 ### 개발 서버 실행
 ```bash
+# 로컬 환경으로 실행 (기본값)
+npm run dev:local
+
+# 개발 서버 환경으로 실행
 npm run dev
-# 또는
+
+# 또는 yarn 사용
+yarn dev:local
 yarn dev
 ```
 개발 서버가 `http://localhost:5173`에서 실행됩니다.
