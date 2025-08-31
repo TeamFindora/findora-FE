@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { login } from '../../api'
+import { login } from '../api'
 import { ChatBubbleLeftIcon } from '@heroicons/react/24/outline'
 import './Login.css'
 

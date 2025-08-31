@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { checkNickname, checkUsername, sendEmailVerification, verifyEmailCode, signUp } from '../../api'
-import type { AgreementData } from '../../api'
+import { checkNickname, checkUsername, sendEmailVerification, verifyEmailCode, signUp } from '../api'
+import type { AgreementData } from '../api'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import './SignUp.css'
 

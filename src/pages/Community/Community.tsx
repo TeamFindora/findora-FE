@@ -1,4 +1,4 @@
-import '../Home/Home.css'
+import '../Home.css'
 import { useNavigate } from 'react-router-dom'
 import { useState, useMemo } from 'react'
 import { MagnifyingGlassIcon, ChatBubbleLeftIcon, EyeIcon } from '@heroicons/react/24/outline'

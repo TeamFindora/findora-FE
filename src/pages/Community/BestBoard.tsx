@@ -1,4 +1,4 @@
-import '../Home/Home.css'
+import '../Home.css'
 import { useNavigate } from 'react-router-dom'
 import { useState, useMemo, useEffect } from 'react'
 import { postsApi } from '../../api/posts'

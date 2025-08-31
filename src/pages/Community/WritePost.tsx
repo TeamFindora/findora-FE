@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import '../Home/Home.css'
+import '../Home.css'
 import { postsApi, CATEGORIES, CATEGORY_NAMES } from '../../api/posts'
 import { getCurrentUser, isAuthenticated } from '../../api/auth'
 

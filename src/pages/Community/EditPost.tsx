@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import '../Home/Home.css'
+import '../Home.css'
 import { postsApi } from '../../api/posts'
 import type { PostResponseDto, PostUpdateDto } from '../../api/posts'
 import { getCurrentUser, isAuthenticated } from '../../api/auth'

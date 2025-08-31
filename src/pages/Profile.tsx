@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getCurrentUser, getUserProfile, updateNickname, deleteAccount } from '../../api'
+import { getCurrentUser, getUserProfile, updateNickname, deleteAccount } from '../api'
 import './Profile.css'
 
 const Profile = () => {
