@@ -5,72 +5,52 @@ import { EyeIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline'
 const PostDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<'content' | 'comments' | 'related'>('content')
-  const [newComment, setNewComment] = useState('')
+  const [activeTab, setActiveTab] = useState('content')
 
-  // Mock 데이터 (실제로는 API에서 가져올 예정)
+  // Mock 데이터 (나중에 API 연동 예정)
   const mockPost = {
     id: Number(id),
     title: '석사 준비 중인데 연구실 추천 좀 부탁드려요!',
     writer: 'skywalker',
-    content: `안녕하세요! 현재 석사 준비 중인 학생입니다.
-
-컴퓨터 공학 전공으로 AI/ML 분야에 관심이 많은데, 좋은 연구실 추천 부탁드립니다.
-
-특히 다음과 같은 조건을 고려하고 있습니다:
-- 서울/경기 지역
-- AI/ML 관련 연구
-- 학비 지원 가능한 곳
-- 좋은 연구 환경
-
-조언 부탁드립니다!`,
+    content: `안녕하세요! 현재 석사 준비 중인 학생입니다.\n\n컴퓨터 공학 전공으로 AI/ML 분야에 관심이 많은데, 좋은 연구실 추천 부탁드립니다.\n\n특히 다음과 같은 조건을 고려하고 있습니다:\n- 서울/경기 지역\n- AI/ML 관련 연구\n- 학비 지원 가능한 곳\n- 좋은 연구 환경\n\n조언 부탁드립니다!`,
     comments: 3,
     views: 156,
     likes: 12,
     createdAt: '2024-01-15',
-    updatedAt: '2024-01-15',
-    category: '질문',
-    tags: ['석사', '연구실', 'AI/ML', '컴퓨터공학']
+    tags: ['연구실', '석사', 'AI/ML', '지원']
   }
-
+  
   const mockComments = [
     {
       id: 1,
-      writer: 'ml_expert',
-      content: 'KAIST AI 대학원 추천드립니다. 학비 지원도 잘 되고 연구 환경도 좋아요.',
-      createdAt: '2024-01-15 14:30',
+      author: 'ai_researcher',
+      content: '안녕하세요! 서울대 AI연구원을 추천드립니다. 좋은 연구 환경과 지원이 있어요.',
+      createdAt: '2024-01-15',
       likes: 5
     },
     {
       id: 2,
-      writer: 'grad_student',
-      content: '서울대 컴퓨터공학부도 좋은 선택입니다. 특히 김교수님 연구실 추천해요.',
-      createdAt: '2024-01-15 15:45',
+      author: 'grad_student',
+      content: 'KAIST도 고려해보세요. ML 분야에 좋은 교수님들이 많습니다.',
+      createdAt: '2024-01-16',
       likes: 3
     },
     {
       id: 3,
-      writer: 'researcher',
-      content: '포스텍도 고려해보세요. AI 분야에서 꽤 강세를 보이고 있습니다.',
-      createdAt: '2024-01-15 16:20',
-      likes: 2
+      author: 'lab_senior',
+      content: '연구실 선택할 때 고려사항은 교수님 연구 스타일, 대학원생 수, 연구비 등이 중요해요.',
+      createdAt: '2024-01-16',
+      likes: 8
     }
   ]
-
+  
   const mockRelatedPosts = [
     {
-      id: 1,
+      id: 2,
       title: '대학원 면접 준비 팁 공유해요',
       writer: 'interview_expert',
       views: 567,
       comments: 8
-    },
-    {
-      id: 2,
-      title: '연구실 선택할 때 고려사항',
-      writer: 'lab_guide',
-      views: 456,
-      comments: 6
     },
     {
       id: 3,
@@ -78,16 +58,15 @@ const PostDetail = () => {
       writer: 'ai_study',
       views: 123,
       comments: 4
+    },
+    {
+      id: 4,
+      title: '대학원 생활 후기 공유해요',
+      writer: 'grad_life',
+      views: 789,
+      comments: 12
     }
   ]
-
-  const handleCommentSubmit = () => {
-    if (newComment.trim()) {
-      // 댓글 작성 로직
-      console.log('댓글 작성:', newComment)
-      setNewComment('')
-    }
-  }
 
   return (
     <div className="post-detail-page min-h-screen bg-white text-black py-12 px-6">
@@ -96,7 +75,7 @@ const PostDetail = () => {
         <div className="post-detail-back-section text-left mt-10 mb-5">
           <button
             onClick={() => navigate('/community')}
-            className="post-detail-back-button text-black px-3 py-1 rounded-full text-xs font-medium hover:underline bg-zinc-100"
+            className="text-slate-600 hover:text-slate-800 transition-colors flex items-center font-medium"
           >
             ← 커뮤니티로 돌아가기
           </button>
@@ -174,42 +153,19 @@ const PostDetail = () => {
           {activeTab === 'comments' && (
             <div className="post-detail-comments-section">
               <h3 className="post-detail-comments-title text-xl font-semibold mb-3">댓글</h3>
-              
-              {/* 댓글 목록 */}
-              <div className="post-detail-comments-list space-y-4 mb-6">
+              <div className="post-detail-comments-list space-y-4">
                 {mockComments.map((comment) => (
-                  <div key={comment.id} className="post-detail-comment border-b border-gray-200 pb-4">
+                  <div key={comment.id} className="post-detail-comment p-4 border border-gray-200 rounded-lg">
                     <div className="post-detail-comment-header flex items-center justify-between mb-2">
-                      <span className="post-detail-comment-author font-medium text-[#B8DCCC]">{comment.writer}</span>
-                      <span className="post-detail-comment-date text-sm text-gray-500">{comment.createdAt}</span>
+                      <div className="post-detail-comment-author-info flex items-center gap-3">
+                        <span className="post-detail-comment-author font-medium text-[#B8DCCC]">{comment.author}</span>
+                        <span className="post-detail-comment-date text-xs text-gray-500">{comment.createdAt}</span>
+                      </div>
+                      <span className="post-detail-comment-likes text-xs text-gray-600">👍 {comment.likes}</span>
                     </div>
-                    <p className="post-detail-comment-content text-gray-700">{comment.content}</p>
-                    <div className="post-detail-comment-actions mt-2">
-                      <button className="post-detail-comment-like text-sm text-gray-500 hover:text-[#B8DCCC]">
-                        👍 좋아요 {comment.likes}
-                      </button>
-                    </div>
+                    <p className="post-detail-comment-content text-sm text-gray-700 leading-relaxed">{comment.content}</p>
                   </div>
                 ))}
-              </div>
-
-              {/* 댓글 작성 */}
-              <div className="post-detail-comment-form border-t pt-4">
-                <textarea 
-                  placeholder="댓글을 입력하세요..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  className="post-detail-comment-input w-full p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:border-[#B8DCCC]"
-                  rows={3}
-                />
-                <div className="post-detail-comment-submit flex justify-end mt-2">
-                  <button 
-                    onClick={handleCommentSubmit}
-                    className="post-detail-comment-button bg-[#B8DCCC] text-black font-semibold px-4 py-2 rounded hover:bg-opacity-90"
-                  >
-                    댓글 작성
-                  </button>
-                </div>
               </div>
             </div>
           )}

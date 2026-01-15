@@ -1,3 +1,4 @@
+import '../Home.css'
 import { useNavigate } from 'react-router-dom'
 import { useState, useMemo } from 'react'
 import { MagnifyingGlassIcon, ChatBubbleLeftIcon, EyeIcon } from '@heroicons/react/24/outline'
@@ -9,6 +10,8 @@ const Community = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const postsPerPage = 5
   const [activeTab, setActiveTab] = useState<'free' | 'best'>('free')
+
+  // 임시 데이터 (API 연동 전까지 사용)
   const mockPosts = [
     { 
       id: 1, 
@@ -86,8 +89,11 @@ const Community = () => {
 
   // 검색, 필터링, 정렬된 게시글
   const filteredAndSortedPosts = useMemo(() => {
+    // 임시 데이터 사용 (나중에 API 연동 예정)
+    const dataToUse = mockPosts
+    
     // 1. 필터링
-    let filtered = mockPosts.filter(post => {
+    let filtered = dataToUse.filter(post => {
       // 검색어 필터링 (제목, 작성자에서 검색)
       const searchMatch = searchTerm === '' || 
         post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -104,10 +110,7 @@ const Community = () => {
         case 'oldest':
           return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
         case 'popular':
-          // 조회수 + 댓글수로 인기도 계산
-          const popularityA = a.views + (a.comments * 10)
-          const popularityB = b.views + (b.comments * 10)
-          return popularityB - popularityA
+          return (b.views + b.comments * 10) - (a.views + a.comments * 10)
         case 'comments':
           return b.comments - a.comments
         case 'views':
@@ -118,7 +121,7 @@ const Community = () => {
     })
 
     return filtered
-  }, [mockPosts, searchTerm, sortBy])
+  }, [searchTerm, sortBy])
 
   // 인기 게시글(조회수+댓글수 상위 3개)
   const popularPosts = [...mockPosts]
@@ -127,8 +130,8 @@ const Community = () => {
 
   // 자유게시판: 전체 게시글
   const freeBoardPosts = filteredAndSortedPosts
-  // 베스트게시판: 인기순 정렬(조회수+댓글수)
-  const bestBoardPosts = [...filteredAndSortedPosts].sort((a, b) => (b.views + b.comments * 10) - (a.views + a.comments * 10))
+  // 베스트게시판: 인기순 정렬
+  const bestBoardPosts = [...mockPosts].sort((a, b) => (b.views + b.comments * 10) - (a.views + a.comments * 10))
 
   // 현재 활성 탭에 따른 게시글 목록
   const currentTabPosts = activeTab === 'free' ? freeBoardPosts : bestBoardPosts
@@ -142,7 +145,7 @@ const Community = () => {
   // 페이지 변경 시 상단으로 스크롤
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    // window.scrollTo({ top: 0, behavior: 'smooth' }) // 페이지 상단 스크롤 제거
   }
 
   // 검색어나 필터 변경 시 페이지 초기화
@@ -155,7 +158,6 @@ const Community = () => {
     setSortBy(sort)
     setCurrentPage(1)
   }
-
 
   const clearSearch = () => {
     setSearchTerm('')
@@ -209,7 +211,7 @@ const Community = () => {
 
         {/* 검색 결과 표시 */}
         {currentTabPosts.length === 0 ? (
-                      <div className="community-empty-state text-center text-gray-400 py-12 mb-8">
+          <div className="community-empty-state text-center text-gray-400 py-12 mb-8">
             <div className="community-empty-icon-wrapper mb-4">
               <MagnifyingGlassIcon className="w-16 h-16 mx-auto text-gray-300" />
             </div>
@@ -269,7 +271,7 @@ const Community = () => {
             베스트 게시판
           </button>
           <button 
-            className="community-write-button ml-auto text-white bg-gray-600 px-4 py-2 rounded-lg font-semibold shadow-sm hover:shadow-md hover:bg-blue-200/30 transition-all duration-300 border border-blue-200/30"
+            className="community-write-button ml-auto text-white bg-gray-600 px-4 py-2 rounded-lg font-semibold shadow-sm hover:shadow-md hover:bg-gray-700 transition-all duration-300"
             onClick={() => navigate('/community/write')}
           >
             <svg
@@ -369,6 +371,7 @@ const Community = () => {
             </div>
           </div>
         )}
+
       </div>
     </div>
   )

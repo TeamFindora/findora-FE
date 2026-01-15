@@ -10,7 +10,18 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path
+        rewrite: (path) => path,
+        configure: (proxy) => {
+          proxy.on('error', (err, req, res) => {
+            console.log('프록시 에러:', err);
+          });
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.log('프록시 요청:', req.method, req.url, '→', `http://localhost:8080${req.url}`);
+          });
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            console.log('프록시 응답:', req.method, req.url, '상태:', proxyRes.statusCode);
+          });
+        }
       }
     }
   }

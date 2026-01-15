@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAdmissionPosts } from '../../hooks/posts/useAdmissionPosts'
 import { MagnifyingGlassIcon, StarIcon, EyeIcon, BookOpenIcon, ChatBubbleLeftEllipsisIcon, ShieldCheckIcon } from '@heroicons/react/24/outline'
 
 const mockTips = [
@@ -69,17 +70,28 @@ const mockAdmissions = [
 
 const Admission = () => {
   const navigate = useNavigate()
-  const [selectedTip, setSelectedTip] = useState<typeof mockTips[0] | null>(null)
+  const [selectedTip, setSelectedTip] = useState<any>(null)
   const [paidTips, setPaidTips] = useState<number[]>([])
   const [search, setSearch] = useState('')
+  
+  // 실제 API에서 입시관 게시글 가져오기
+  const { posts: admissionPosts, loading, error } = useAdmissionPosts()
 
-  // 검색 필터링
-  const filteredTips = useMemo(() =>
-    mockTips.filter(tip =>
-      [tip.title, tip.preview, tip.content, tip.author, tip.school, tip.major]
+  // 검색 필터링 - 실제 게시글 데이터 사용
+  const filteredTips = useMemo(() => {
+    if (admissionPosts.length === 0) {
+      // API 데이터가 없으면 mock 데이터 사용
+      return mockTips.filter(tip =>
+        [tip.title, tip.preview, tip.content, tip.author, tip.school, tip.major]
+          .some(field => field.toLowerCase().includes(search.toLowerCase()))
+      )
+    }
+    
+    return admissionPosts.filter(post =>
+      [post.title, post.content, post.userNickname]
         .some(field => field.toLowerCase().includes(search.toLowerCase()))
-    ), [search]
-  )
+    )
+  }, [search, admissionPosts])
 
   const filteredAdmissions = useMemo(() =>
     mockAdmissions.filter(info =>
@@ -131,10 +143,24 @@ const Admission = () => {
 
         {/* 합격자 후기/꿀팁 카드 그리드 */}
         <div className="grid grid-cols-1 gap-8 mb-16">
-          {filteredTips.length === 0 ? (
+          {loading ? (
+            <div className="col-span-2 text-center text-gray-400 py-12">
+              <div className="text-6xl mb-4">⏳</div>
+              <div className="text-xl">게시글을 불러오는 중...</div>
+            </div>
+          ) : error ? (
+            <div className="col-span-2 text-center text-red-400 py-12">
+              <div className="text-6xl mb-4">❌</div>
+              <div className="text-xl">게시글을 불러오는데 실패했습니다.</div>
+              <div className="text-sm mt-2">{error}</div>
+            </div>
+          ) : filteredTips.length === 0 ? (
             <div className="col-span-2 text-center text-gray-400 py-12">
               <MagnifyingGlassIcon className="w-16 h-16 mx-auto mb-4 text-gray-300" />
               <div className="text-xl">검색 결과가 없습니다.</div>
+              {admissionPosts.length === 0 && (
+                <div className="text-sm mt-2">아직 등록된 입시관 게시글이 없습니다.</div>
+              )}
             </div>
           ) : filteredTips.map(tip => (
             <div key={tip.id} className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 border border-gray-100">
@@ -143,30 +169,77 @@ const Admission = () => {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="bg-gray-800 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                      {tip.school}
+                      {tip.school || tip.category?.name || '입시관'}
                     </span>
                     <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
-                      {tip.major}
+                      {tip.major || '합격수기'}
                     </span>
                   </div>
                   <h3 className="text-xl font-bold text-gray-800 mb-2">{tip.title}</h3>
-                  <div className="text-sm text-gray-600 mb-3">by {tip.author} • {tip.year}년 합격</div>
+                  <div className="text-sm text-gray-600 mb-3">
+                    by {tip.author || tip.userNickname} 
+                    {tip.year && ` • ${tip.year}년 합격`}
+                    {tip.createdAt && ` • ${new Date(tip.createdAt).toLocaleDateString()}`}
+                  </div>
                 </div>
                 <div className="text-right">
                   <div className="flex items-center gap-1 mb-1">
                     <StarIcon className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                    <span className="font-semibold">{tip.rating}</span>
+                    <span className="font-semibold">{tip.rating || '5.0'}</span>
                   </div>
-                  <div className="text-xs text-gray-500">조회 {tip.views}</div>
+                  <div className="text-xs text-gray-500">조회 {tip.views || tip.viewCount || 0}</div>
                 </div>
               </div>
 
               {/* 미리보기 내용 */}
-              <div className="bg-gray-50 rounded-xl p-4 mb-6 flex items-center justify-between">
-                <p className="text-gray-700 leading-relaxed flex-1 mr-4">{tip.preview}</p>
+              <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                <p className="text-gray-700 leading-relaxed">
+                  {tip.preview || (tip.content ? tip.content.substring(0, 100) + '...' : '내용을 확인해보세요!')}
+                </p>
+              </div>
+
+              {/* 버튼들 */}
+              <div className="flex justify-between items-center gap-3">
+                {/* 작성자에게 쪽지 보내기 버튼 (실제 게시글만) */}
+                {!tip.preview && (
+                  <button
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl font-medium shadow-sm hover:shadow-md transition-all duration-300 flex items-center gap-2"
+                    onClick={() => {
+                      const userId = tip.userId || tip.user?.id
+                      const nickname = tip.userNickname || tip.user?.nickname
+                      
+                      if (!userId) {
+                        alert('작성자 정보를 찾을 수 없습니다.')
+                        return
+                      }
+                      
+                      // 쪽지 사이드바를 열고 해당 작성자에게 메시지 보내기
+                      const event = new CustomEvent('open-message-sidebar-with-target', {
+                        detail: {
+                          userId: userId.toString(),
+                          nickname: nickname || '익명'
+                        }
+                      })
+                      window.dispatchEvent(event)
+                    }}
+                  >
+                    <ChatBubbleLeftEllipsisIcon className="w-4 h-4" />
+                    쪽지 보내기
+                  </button>
+                )}
+                
+                {/* 합격수기 상세보기 버튼 */}
                 <button
-                  className="bg-blue-200/40 text-gray-700 px-6 py-3 rounded-lg font-semibold shadow-sm hover:shadow-md hover:bg-[#B8DCCC]/30 transition-all duration-300 border border-[#B8DCCC]/30 whitespace-nowrap"
-                  onClick={() => setSelectedTip(tip)}
+                  className="bg-gray-800 text-white px-6 py-3 rounded-xl font-semibold shadow-sm hover:shadow-md hover:bg-gray-700 transition-all duration-300 flex items-center gap-2"
+                  onClick={() => {
+                    if (tip.preview) {
+                      // Mock 데이터인 경우 기존 모달 사용
+                      setSelectedTip(tip)
+                    } else {
+                      // 실제 게시글인 경우 상세 페이지로 이동
+                      navigate(`/community/post/${tip.id}`)
+                    }
+                  }}
                 >
                   <BookOpenIcon className="w-4 h-4 inline mr-2" />
                   합격수기 상세보기

@@ -24,12 +24,12 @@ export interface LoginResponse {
 }
 
 // API 기본 설정
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+// const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 // 닉네임 중복 확인
 export const checkNickname = async (nickname: string): Promise<ApiResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/users/check-nickname?nickname=${encodeURIComponent(nickname)}`);
+    const response = await fetch(`/api/users/check-nickname?nickname=${encodeURIComponent(nickname)}`);
     const data: CheckResponse = await response.json();
     
     if (data.exists) {
@@ -46,7 +46,7 @@ export const checkNickname = async (nickname: string): Promise<ApiResponse> => {
 // 아이디 중복 확인
 export const checkUsername = async (username: string): Promise<ApiResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/users/check-loginid?loginId=${encodeURIComponent(username)}`);
+    const response = await fetch(`/api/users/check-loginid?loginId=${encodeURIComponent(username)}`);
     const data: CheckResponse = await response.json();
     
     if (data.exists) {
@@ -63,7 +63,7 @@ export const checkUsername = async (username: string): Promise<ApiResponse> => {
 // 이메일 인증번호 발송
 export const sendEmailVerification = async (email: string): Promise<ApiResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/email/send-code`, {
+    const response = await fetch(`/api/email/send-code`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -87,7 +87,7 @@ export const sendEmailVerification = async (email: string): Promise<ApiResponse>
 // 이메일 인증번호 확인
 export const verifyEmailCode = async (email: string, code: string): Promise<ApiResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/email/verify-code`, {
+    const response = await fetch(`/api/email/verify-code`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -111,11 +111,10 @@ export const verifyEmailCode = async (email: string, code: string): Promise<ApiR
 // 로그인
 export const login = async (username: string, password: string): Promise<ApiResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+    const { apiRequest, API_ENDPOINTS, parseApiResponse } = await import('./config')
+    
+    const response = await apiRequest(API_ENDPOINTS.AUTH.LOGIN, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({ 
         loginId: username, 
         password 
@@ -123,7 +122,7 @@ export const login = async (username: string, password: string): Promise<ApiResp
     });
     
     if (response.ok) {
-      const data: LoginResponse = await response.json();
+      const data: LoginResponse = await parseApiResponse(response);
       
       // 토큰 만료 시간 계산 (현재 시간 + expiresIn)
       const expirationTime = Date.now() + data.expiresIn;
@@ -140,10 +139,46 @@ export const login = async (username: string, password: string): Promise<ApiResp
         message: `${data.user.nickname}님, 환영합니다!` 
       };
     } else {
-      const errorData = await response.json();
+      // 서버 응답 타입 확인
+      const contentType = response.headers.get('content-type');
+      console.log('로그인 실패 응답:', {
+        status: response.status,
+        statusText: response.statusText,
+        contentType
+      });
+      
+      let errorMessage = "로그인에 실패했습니다.";
+      
+      try {
+        if (contentType && contentType.includes('application/json')) {
+          // JSON 응답인 경우
+          const errorData = await parseApiResponse(response);
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } else {
+          // JSON이 아닌 응답인 경우
+          const errorText = await response.text();
+          console.log('서버 에러 메시지:', errorText);
+          
+          if (response.status === 500) {
+            errorMessage = "서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+          } else if (response.status === 401) {
+            errorMessage = "아이디 또는 비밀번호가 올바르지 않습니다.";
+          } else if (errorText && errorText.trim()) {
+            errorMessage = errorText;
+          }
+        }
+      } catch (parseError) {
+        console.error('응답 파싱 실패:', parseError);
+        if (response.status === 500) {
+          errorMessage = "서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+        } else if (response.status === 401) {
+          errorMessage = "아이디 또는 비밀번호가 올바르지 않습니다.";
+        }
+      }
+      
       return { 
         success: false, 
-        message: errorData.message || errorData.error || "로그인에 실패했습니다." 
+        message: errorMessage
       };
     }
   } catch (error) {
@@ -169,7 +204,7 @@ export interface AgreementData {
 
 export const signUp = async (data: SignUpData): Promise<ApiResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/users/register`, {
+    const response = await fetch(`/api/users/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -243,18 +278,30 @@ export const getCurrentUser = () => {
 };
 
 export const logout = (): void => {
+  // 모든 인증 관련 데이터 삭제
   localStorage.removeItem('accessToken');
   localStorage.removeItem('refreshToken');
   localStorage.removeItem('tokenType');
   localStorage.removeItem('expiresIn');
   localStorage.removeItem('user');
+  
+  // 추가로 모든 관련 데이터 삭제
+  sessionStorage.clear(); // 세션 스토리지도 정리
+  
+  // 페이지 새로고침으로 React 상태 완전 초기화
+  window.location.reload();
 };
 
 // 사용자 프로필 조회
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const getUserProfile = async (): Promise<any> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
+    const user = getCurrentUser();
+    if (!user || !user.userId) {
+      return { success: false, message: "사용자 정보를 찾을 수 없습니다." };
+    }
+
+    const response = await fetch(`/api/users/${user.userId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -278,33 +325,68 @@ export const getUserProfile = async (): Promise<any> => {
   }
 };
 
-// 사용자 프로필 수정
-export const updateUserProfile = async (profileData: {
-  nickname?: string;
-  email?: string;
-}): Promise<ApiResponse> => {
+// 닉네임 수정
+export const updateNickname = async (newNickname: string): Promise<ApiResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
+    const user = getCurrentUser();
+    if (!user || !user.userId) {
+      return { success: false, message: "사용자 정보를 찾을 수 없습니다." };
+    }
+
+    const response = await fetch(`/api/users/${user.userId}/nickname`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         ...getAuthHeader(),
       },
-      body: JSON.stringify(profileData),
+      body: JSON.stringify({ newNickname }),
     });
 
     if (response.ok) {
       const data = await response.json();
-      return { success: true, message: "프로필이 수정되었습니다." };
+      return { success: true, message: data.message || "닉네임이 수정되었습니다." };
     } else {
       const errorData = await response.json();
       return { 
         success: false, 
-        message: errorData.message || "프로필 수정에 실패했습니다." 
+        message: errorData.error || "닉네임 수정에 실패했습니다." 
       };
     }
   } catch (error) {
-    console.error('프로필 수정 오류:', error);
+    console.error('닉네임 수정 오류:', error);
+    return { success: false, message: "네트워크 오류가 발생했습니다." };
+  }
+};
+
+// 비밀번호 수정
+export const updatePassword = async (newPassword: string): Promise<ApiResponse> => {
+  try {
+    const user = getCurrentUser();
+    if (!user || !user.userId) {
+      return { success: false, message: "사용자 정보를 찾을 수 없습니다." };
+    }
+
+    const response = await fetch(`/api/users/${user.userId}/password`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify({ newPassword }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return { success: true, message: data.message || "비밀번호가 수정되었습니다." };
+    } else {
+      const errorData = await response.json();
+      return { 
+        success: false, 
+        message: errorData.error || "비밀번호 수정에 실패했습니다." 
+      };
+    }
+  } catch (error) {
+    console.error('비밀번호 수정 오류:', error);
     return { success: false, message: "네트워크 오류가 발생했습니다." };
   }
 };
@@ -317,7 +399,7 @@ export const refreshAccessToken = async (): Promise<ApiResponse> => {
       return { success: false, message: "리프레시 토큰이 없습니다." };
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+    const response = await fetch(`/api/auth/refresh`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -364,4 +446,33 @@ export const checkAndRefreshToken = async (): Promise<boolean> => {
   }
   
   return true;
+};
+
+// 회원 탈퇴
+export const deleteAccount = async (): Promise<ApiResponse> => {
+  try {
+    const response = await fetch(`/api/users/me`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeader(),
+      },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      // 탈퇴 성공 시 로컬 스토리지에서 모든 사용자 정보 삭제
+      logout();
+      return { success: true, message: data.message || "회원 탈퇴가 완료되었습니다." };
+    } else {
+      const errorData = await response.json();
+      return { 
+        success: false, 
+        message: errorData.error || "회원 탈퇴에 실패했습니다." 
+      };
+    }
+  } catch (error) {
+    console.error('회원 탈퇴 오류:', error);
+    return { success: false, message: "네트워크 오류가 발생했습니다." };
+  }
 }; 
